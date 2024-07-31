@@ -1,0 +1,23 @@
+<?xml version="1.0"?>
+
+<!--
+ * @author      Andreas Knollmann
+ * @copyright   2014-2024 Softwareentwicklung Andreas Knollmann
+ * @license     http://www.opensource.org/licenses/mit-license.php MIT
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:module:Magento_Config:etc/system_file.xsd">
+    <system>
+        <section id="infrangible_catalogattributelandingpage" translate="label" type="text" sortOrder="470" showInDefault="1" showInWebsite="1" showInStore="1">
+            <label>Attribute Landing Page</label>
+            <tab>infrangible</tab>
+            <resource>Infrangible_CatalogAttributeLandingPage::config_infrangible_catalogattributelandingpage</resource>
+            <group id="general" translate="label" type="text" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                <label>General</label>
+                <field id="image_position" translate="label" type="select" sortOrder="10" showInDefault="1" showInWebsite="1" showInStore="1">
+                    <label>Image Position</label>
+                    <source_model>Infrangible\CatalogAttributeLandingPage\Model\Config\Source\ImagePosition</source_model>
+                </field>
+            </group>
+        </section>
+    </system>
+</config>

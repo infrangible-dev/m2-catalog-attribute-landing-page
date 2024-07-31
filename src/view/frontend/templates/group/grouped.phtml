@@ -1,0 +1,22 @@
+<?php
+
+declare(strict_types=1);
+
+/**
+ * @author      Andreas Knollmann
+ * @copyright   Copyright (c) 2014-2024 Softwareentwicklung Andreas Knollmann
+ * @license     http://www.opensource.org/licenses/mit-license.php MIT
+ */
+
+use Infrangible\CatalogAttributeLandingPage\Block\Group\Grouped;
+/** @var Grouped $block */
+?>
+
+<?php if ($block->isPages($block->getGroupedPages())): ?>
+    <?php echo $block->getPagesHtml(); ?>
+<?php else: ?>
+    <?php foreach ($block->getGroupedPages() as $headline => $groupedPages): ?>
+        <h<?php echo $block->getLevel() + 2; ?>><?php echo $headline; ?></h<?php echo $block->getLevel() + 2; ?>>
+        <?php echo $block->getGroupedPagesHtml($groupedPages); ?>
+    <?php endforeach; ?>
+<?php endif; ?>

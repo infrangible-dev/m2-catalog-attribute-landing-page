@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+
+<!--
+ * @author      Andreas Knollmann
+ * @copyright   2014-2024 Softwareentwicklung Andreas Knollmann
+ * @license     http://www.opensource.org/licenses/mit-license.php MIT
+-->
+<config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
+    <type name="Magento\Catalog\Model\Layer\Resolver">
+        <arguments>
+            <argument name="layersPool" xsi:type="array">
+                <item name="category" xsi:type="string">Magento\Catalog\Model\Layer\Category</item>
+                <item name="search" xsi:type="string">Magento\Catalog\Model\Layer\Search</item>
+                <item name="landing_page" xsi:type="string">Infrangible\CatalogAttributeLandingPage\Model\Layer</item>
+            </argument>
+        </arguments>
+    </type>
+    <type name="Infrangible\CatalogAttributeLandingPage\Model\Layer">
+        <arguments>
+            <argument name="context" xsi:type="object">Infrangible\CatalogAttributeLandingPage\Model\Layer\Context</argument>
+        </arguments>
+    </type>
+    <virtualType name="Infrangible\CatalogAttributeLandingPage\Model\Layer\Context" type="Magento\Catalog\Model\Layer\Context">
+        <arguments>
+            <argument name="collectionProvider" xsi:type="object">Infrangible\CatalogAttributeLandingPage\Model\Layer\ItemCollectionProvider</argument>
+            <argument name="stateKey" xsi:type="object">Infrangible\CatalogAttributeLandingPage\Model\Layer\StateKey</argument>
+            <argument name="collectionFilter" xsi:type="object">Infrangible\CatalogAttributeLandingPage\Model\Layer\CollectionFilter</argument>
+        </arguments>
+    </virtualType>
+    <virtualType name="additionalFieldsProviderForElasticsearch">
+        <arguments>
+            <argument name="fieldsProviders" xsi:type="array">
+                <item name="attribute_set" xsi:type="object">Infrangible\CatalogAttributeLandingPage\Model\AdvancedSearch\Adapter\DataMapper\AttributeSet</item>
+            </argument>
+        </arguments>
+    </virtualType>
+    <type name="Magento\Framework\Search\Request\Config\FilesystemReader">
+        <plugin name="landingPageSearchDynamicFields" type="Infrangible\CatalogAttributeLandingPage\Model\Search\ReaderPlugin"/>
+    </type>
+</config>

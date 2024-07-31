@@ -1,0 +1,57 @@
+<?php
+
+declare(strict_types=1);
+
+/**
+ * @author      Andreas Knollmann
+ * @copyright   Copyright (c) 2014-2024 Softwareentwicklung Andreas Knollmann
+ * @license     http://www.opensource.org/licenses/mit-license.php MIT
+ */
+
+use Infrangible\CatalogAttributeLandingPage\Block\Page;
+/** @var Page $block */
+$description = $block->getPage()->getDescription();
+$image = $block->getPage()->getImage();
+$imagePosition = $block->getImagePosition();
+$logo = $block->getPage()->getLogo();
+?>
+
+<?php if ($image && $imagePosition === 'headline'): ?>
+    <p class="category-image">
+        <img src="<?php echo $block->getPage()->getImageUrl(); ?>" alt="<?php echo $block->getHeadline(); ?>" title="<?php echo $block->getHeadline(); ?>" />
+    </p>
+<?php endif; ?>
+
+<?php if ($image && $imagePosition === 'description'): ?>
+    <p class="category-image">
+        <img src="<?php echo $block->getPage()->getImageUrl(); ?>" alt="<?php echo $block->getHeadline(); ?>" title="<?php echo $block->getHeadline(); ?>" />
+    </p>
+<?php endif; ?>
+
+<?php if ($description): ?>
+    <div class="landing-page-description category-description std">
+        <?php if ($logo): ?>
+            <img src="<?php echo $block->getPage()->getLogoUrl(); ?>" class="category-logo" alt="<?php echo $block->getHeadline(); ?>" title="<?php echo $block->getHeadline(); ?>" />
+        <?php endif; ?>
+        <?php echo $description; ?>
+    </div>
+<?php endif; ?>
+
+<?php if ($image && $imagePosition === 'cms'): ?>
+    <p class="category-image">
+        <img src="<?php echo $block->getPage()->getImageUrl(); ?>" alt="<?php echo $block->getHeadline(); ?>" title="<?php echo $block->getHeadline(); ?>" />
+    </p>
+<?php endif; ?>
+
+<?php echo $block->getCmsBlockHtml(); ?>
+<?php echo $block->getAdditionalCmsBlockHtml(); ?>
+
+<?php if ($image && $imagePosition === 'product_list'): ?>
+    <p class="category-image">
+        <img src="<?php echo $block->getPage()->getImageUrl(); ?>" alt="<?php echo $block->getHeadline(); ?>" title="<?php echo $block->getHeadline(); ?>" />
+    </p>
+<?php endif; ?>
+
+<?php echo $block->getProductListHtml(); ?>
+
+<?php echo $block->getSeoCmsBlockHtml(); ?>

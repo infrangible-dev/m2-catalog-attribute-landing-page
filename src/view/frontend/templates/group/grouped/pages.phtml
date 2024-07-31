@@ -1,0 +1,41 @@
+<?php
+
+declare(strict_types=1);
+
+/**
+ * @author      Andreas Knollmann
+ * @copyright   Copyright (c) 2014-2024 Softwareentwicklung Andreas Knollmann
+ * @license     http://www.opensource.org/licenses/mit-license.php MIT
+ */
+
+use Infrangible\CatalogAttributeLandingPage\Block\Group\Grouped\Pages;
+/** @var Pages $block */
+$columnCount = 4;
+$pages = $block->getPages();
+$i = 0;
+?>
+
+<div class="category-products">
+    <ul class="products-grid products-grid--max-<?php echo $columnCount; ?>-col">
+        <?php foreach ($pages as $page): ?>
+            <?php $i++; ?>
+            <?php $thumbnail = $page->getThumbnail(); ?>
+            <?php $headline = $block->stripTags($page->getHeadline(), null, true); ?>
+            <li class="item<?php if ($i % $columnCount == 0): ?> first<?php elseif (($i + 1) % $columnCount == 0): ?> last<?php endif; ?>">
+                <?php if ($thumbnail): ?>
+                    <a href="<?php echo $page->getUrl(); ?>" title="<?php echo $headline; ?>" class="product-image">
+                        <img id="product-collection-image-<?php echo $page->getId(); ?>" src="<?php echo $page->getThumbnailUrl(); ?>" alt="<?php echo $headline; ?>" width="210" />
+                    </a>
+                <?php endif; ?>
+                <div class="product-info">
+                    <h2 class="product-name"><a href="<?php echo $page->getUrl(); ?>" title="<?php echo $headline; ?>"><?php echo $headline; ?></a></h2>
+                    <div class="actions">
+                        <button type="button" title="<?php echo __('View Products'); ?>" class="button btn-cart" onclick="window.location.href='<?php echo $page->getUrl(); ?>';">
+                            <span><span><?php echo __('View Products'); ?></span></span>
+                        </button>
+                    </div>
+                </div>
+            </li>
+        <?php endforeach; ?>
+    </ul>
+</div>

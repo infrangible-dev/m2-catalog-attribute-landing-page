@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+
+<!--
+ * @author      Andreas Knollmann
+ * @copyright   2014-2024 Softwareentwicklung Andreas Knollmann
+ * @license     http://www.opensource.org/licenses/mit-license.php MIT
+-->
+<config>
+    <catalog_product_filter_url>
+        <action id="infrangible_catalogattributelandingpage">infrangible_catalogattributelandingpage_page_view</action>
+    </catalog_product_filter_url>
+</config>
