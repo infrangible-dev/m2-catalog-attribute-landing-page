@@ -19,6 +19,13 @@
                 </block>
             </block>
         </referenceContainer>
+        <referenceContainer name="columns.top">
+            <container name="landing_page.view.container" htmlTag="div" htmlClass="category-view" after="-">
+                <block class="Infrangible\CatalogAttributeLandingPage\Block\Page" name="landing_page.description" template="Infrangible_CatalogAttributeLandingPage::page/description.phtml"/>
+                <block class="Infrangible\CatalogAttributeLandingPage\Block\Page" name="landing_page.cms" template="Infrangible_CatalogAttributeLandingPage::page/cms.phtml"/>
+                <block class="Infrangible\CatalogAttributeLandingPage\Block\Page" name="landing_page.image" template="Infrangible_CatalogAttributeLandingPage::page/image.phtml"/>
+            </container>
+        </referenceContainer>
         <referenceContainer name="content">
             <block class="Infrangible\CatalogAttributeLandingPage\Block\Page" name="landing_page.products" template="Infrangible_CatalogAttributeLandingPage::page.phtml">
                 <block class="Infrangible\CatalogAttributeLandingPage\Block\Product\ListProduct" name="product_list" as="landing_page.products.list" template="Magento_Catalog::product/list.phtml">

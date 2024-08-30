@@ -1,0 +1,31 @@
+<?php
+
+declare(strict_types=1);
+
+/**
+ * @author      Andreas Knollmann
+ * @copyright   Copyright (c) 2014-2024 Softwareentwicklung Andreas Knollmann
+ * @license     http://www.opensource.org/licenses/mit-license.php MIT
+ */
+
+use Infrangible\CatalogAttributeLandingPage\Block\Page;
+
+/** @var Page $block */
+$image = $block->getPage()->getImage();
+$imagePosition = $block->getImagePosition();
+$description = $block->getPage()->getDescription();
+$logo = $block->getPage()->getLogo();
+?>
+
+<?php if ($image && $imagePosition === 'description'): ?>
+    <div class="category-image"><img src="<?php echo $block->getPage()->getImageUrl(); ?>" alt="<?php echo $block->getHeadline(); ?>" title="<?php echo $block->getHeadline(); ?>" class="image"/></div>
+<?php endif; ?>
+
+<?php if ($description) :?>
+    <div class="category-description">
+        <?php if ($logo): ?>
+            <img src="<?php echo $block->getPage()->getLogoUrl(); ?>" class="category-logo" alt="<?php echo $block->getHeadline(); ?>" title="<?php echo $block->getHeadline(); ?>" />
+        <?php endif; ?>
+        <?= /* @noEscape */ $description; ?>
+    </div>
+<?php endif; ?>
