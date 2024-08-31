@@ -10,6 +10,13 @@
         <resources>
             <resource id="Magento_Backend::admin">
                 <resource id="Infrangible_CatalogAttributeLandingPage::infrangible_catalogattributelandingpage" title="Attribute Landing Pages" sortOrder="470"/>
+                <resource id="Magento_Backend::stores">
+                    <resource id="Magento_Backend::stores_settings">
+                        <resource id="Magento_Config::config">
+                            <resource id="Infrangible_CatalogAttributeLandingPage::config_infrangible_catalogattributelandingpage" title="Attribute Landing Page" translate="title" sortOrder="470"/>
+                        </resource>
+                    </resource>
+                </resource>
             </resource>
         </resources>
     </acl>
