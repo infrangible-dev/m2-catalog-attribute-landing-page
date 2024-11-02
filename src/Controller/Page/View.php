@@ -10,6 +10,7 @@ use Infrangible\CatalogAttributeLandingPage\Helper\Data;
 use Infrangible\CatalogAttributeLandingPage\Model\PageFactory;
 use Infrangible\Core\Helper\Attribute;
 use Infrangible\Core\Helper\Registry;
+use Magento\Catalog\Model\Layer\Category\FilterableAttributeList;
 use Magento\Catalog\Model\Layer\Resolver;
 use Magento\Catalog\Model\Product;
 use Magento\Framework\App\Action\Action;
@@ -22,8 +23,7 @@ use Psr\Log\LoggerInterface;
  * @copyright   2014-2024 Softwareentwicklung Andreas Knollmann
  * @license     http://www.opensource.org/licenses/mit-license.php MIT
  */
-class View
-    extends Action
+class View extends Action
 {
     /** @var Registry */
     protected $registryHelper;
@@ -49,6 +49,9 @@ class View
     /** @var Resolver */
     protected $layerResolver;
 
+    /** @var FilterableAttributeList */
+    protected $filterableAttributeList;
+
     public function __construct(
         Context $context,
         Registry $registryHelper,
@@ -58,8 +61,9 @@ class View
         LoggerInterface $logging,
         PageFactory $pageFactory,
         \Infrangible\CatalogAttributeLandingPage\Model\ResourceModel\PageFactory $pageResourceFactory,
-        Resolver $layerResolver)
-    {
+        Resolver $layerResolver,
+        FilterableAttributeList $filterableAttributeList
+    ) {
         parent::__construct($context);
 
         $this->registryHelper = $registryHelper;
@@ -70,6 +74,7 @@ class View
         $this->pageFactory = $pageFactory;
         $this->pageResourceFactory = $pageResourceFactory;
         $this->layerResolver = $layerResolver;
+        $this->filterableAttributeList = $filterableAttributeList;
     }
 
     /**
@@ -79,7 +84,7 @@ class View
     {
         $pageId = $this->getRequest()->getParam('page_id');
 
-        if (!$pageId) {
+        if (! $pageId) {
             $this->_forward('noRoute');
 
             return;
@@ -87,30 +92,65 @@ class View
 
         $page = $this->pageFactory->create();
 
-        $this->pageResourceFactory->create()->load($page, $pageId);
+        $this->pageResourceFactory->create()->load(
+            $page,
+            $pageId
+        );
 
-        if (!$page->getId()) {
+        if (! $page->getId()) {
             $this->_forward('noRoute');
 
             return;
         }
 
-        $this->registryHelper->register('current_page', $page, true);
+        $this->registryHelper->register(
+            'current_page',
+            $page,
+            true
+        );
+
+        $filterableAttributes = $this->filterableAttributeList->getList();
 
         $attributeFilterCodes = [];
         $attributeFilterValues = [];
 
         for ($i = 1; $i <= 5; $i++) {
-            $attributeId = $page->getDataUsingMethod(sprintf('attribute_id%d', $i));
+            $attributeId = $page->getDataUsingMethod(
+                sprintf(
+                    'attribute_id%d',
+                    $i
+                )
+            );
 
             if ($this->variables->isEmpty($attributeId)) {
                 continue;
             }
 
             try {
-                $attribute = $this->eavAttributeHelper->getAttribute(Product::ENTITY, $attributeId);
+                $attribute = $this->eavAttributeHelper->getAttribute(
+                    Product::ENTITY,
+                    $attributeId
+                );
 
                 $attributeCode = $attribute->getAttributeCode();
+
+                $isFilterableAttribute = false;
+
+                foreach ($filterableAttributes as $filterableAttribute) {
+                    if ($filterableAttribute->getAttributeCode() === $attributeCode) {
+                        $isFilterableAttribute = true;
+                        break;
+                    }
+                }
+
+                if (! $isFilterableAttribute) {
+                    throw new Exception(
+                        sprintf(
+                            'Use of non filterable attribute: %s',
+                            $attributeCode
+                        )
+                    );
+                }
             } catch (Exception $exception) {
                 $this->logging->error($exception);
 
@@ -118,21 +158,39 @@ class View
                 return;
             }
 
-            $attributeValue = $page->getDataUsingMethod(sprintf('value%d', $i));
+            $attributeValue = $page->getDataUsingMethod(
+                sprintf(
+                    'value%d',
+                    $i
+                )
+            );
 
-            $this->helper->addValue($attributeCode, $attributeValue);
+            $this->helper->addValue(
+                $attributeCode,
+                $attributeValue
+            );
 
             $attributeFilterCodes[] = $attributeCode;
-            $attributeFilterValues[] = is_array($attributeValue) ? implode('_', $attributeValue) : $attributeValue;
+            $attributeFilterValues[] = is_array($attributeValue) ? implode(
+                '_',
+                $attributeValue
+            ) : $attributeValue;
         }
 
         $attributeSetId = $page->getDataUsingMethod('attribute_set_id');
 
-        if (!$this->variables->isEmpty($attributeSetId)) {
-            $this->helper->addValue('attribute_set_id', $attributeSetId);
+        if (! $this->variables->isEmpty($attributeSetId)) {
+            $this->helper->addValue(
+                'attribute_set_id',
+                $attributeSetId
+            );
         }
 
-        $this->registryHelper->register('attribute_filter', $attributeFilterCodes, true);
+        $this->registryHelper->register(
+            'attribute_filter',
+            $attributeFilterCodes,
+            true
+        );
 
         $this->layerResolver->create('landing_page');
 
@@ -144,12 +202,32 @@ class View
         $update->addHandle('infrangible_catalogattributelandingpage_page_view');
         $update->addHandle(
             sprintf(
-                'infrangible_catalogattributelandingpage_page_view_%s', implode('_', $attributeFilterCodes)));
+                'infrangible_catalogattributelandingpage_page_view_%s',
+                implode(
+                    '_',
+                    $attributeFilterCodes
+                )
+            )
+        );
         $update->addHandle(
             sprintf(
-                'infrangible_catalogattributelandingpage_page_view_%s_%s', implode('_', $attributeFilterCodes),
-                implode('_', $attributeFilterValues)));
-        $update->addHandle(sprintf('infrangible_catalogattributelandingpage_page_view_%d', $page->getId()));
+                'infrangible_catalogattributelandingpage_page_view_%s_%s',
+                implode(
+                    '_',
+                    $attributeFilterCodes
+                ),
+                implode(
+                    '_',
+                    $attributeFilterValues
+                )
+            )
+        );
+        $update->addHandle(
+            sprintf(
+                'infrangible_catalogattributelandingpage_page_view_%d',
+                $page->getId()
+            )
+        );
         $this->_view->loadLayoutUpdates();
 
         $this->_view->generateLayoutXml()->generateLayoutBlocks();
@@ -157,15 +235,16 @@ class View
         $pageConfig = $this->_view->getPage()->getConfig();
 
         $pageConfig->getTitle()->set(
-            $this->variables->isEmpty($page->getPageTitle()) ? $page->getHeadline() : $page->getPageTitle());
+            $this->variables->isEmpty($page->getPageTitle()) ? $page->getHeadline() : $page->getPageTitle()
+        );
 
-        if (!$this->variables->isEmpty($page->getMetaDescription())) {
+        if (! $this->variables->isEmpty($page->getMetaDescription())) {
             $pageConfig->setDescription($page->getMetaDescription());
-        } else if (!$this->variables->isEmpty($page->getDescription())) {
+        } elseif (! $this->variables->isEmpty($page->getDescription())) {
             $pageConfig->setDescription($page->getDescription());
         }
 
-        if (!$this->variables->isEmpty($page->getMetaKeywords())) {
+        if (! $this->variables->isEmpty($page->getMetaKeywords())) {
             $pageConfig->setKeywords($page->getMetaKeywords());
         }
 
