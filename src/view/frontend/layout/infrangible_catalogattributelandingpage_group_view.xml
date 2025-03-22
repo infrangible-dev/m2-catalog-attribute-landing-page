@@ -10,7 +10,9 @@
         <referenceContainer name="content">
             <block class="Infrangible\CatalogAttributeLandingPage\Block\Group" name="landing_page.group" template="group.phtml">
                 <block class="Infrangible\CatalogAttributeLandingPage\Block\Group\Grouped" name="landing_page.group.grouped" template="group/grouped.phtml">
-                    <block class="Infrangible\CatalogAttributeLandingPage\Block\Group\Grouped\Pages" name="landing_page.group.grouped.pages" template="group/grouped/pages.phtml"/>
+                    <block class="Infrangible\CatalogAttributeLandingPage\Block\Group\Grouped\Pages" name="landing_page.group.grouped.pages" template="group/grouped/pages.phtml">
+                        <block class="Infrangible\CatalogAttributeLandingPage\Block\Group\Grouped\Pages\ProductList" name="landing_page.group.grouped.pages.products.list" as="product_list" template="Magento_CatalogWidget::product/widget/content/grid.phtml"/>
+                    </block>
                 </block>
             </block>
         </referenceContainer>

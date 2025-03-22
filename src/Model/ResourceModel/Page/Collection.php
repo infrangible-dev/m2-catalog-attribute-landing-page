@@ -14,26 +14,28 @@ use Zend_Db_Select;
 
 /**
  * @author      Andreas Knollmann
- * @copyright   2014-2024 Softwareentwicklung Andreas Knollmann
+ * @copyright   2014-2025 Softwareentwicklung Andreas Knollmann
  * @license     http://www.opensource.org/licenses/mit-license.php MIT
  */
-class Collection
-    extends AbstractCollection
+class Collection extends AbstractCollection
 {
-    /**
-     * @return void
-     */
-    protected function _construct()
+    protected function _construct(): void
     {
-        $this->_init(Page::class, \Infrangible\CatalogAttributeLandingPage\Model\ResourceModel\Page::class);
+        $this->_init(
+            Page::class,
+            \Infrangible\CatalogAttributeLandingPage\Model\ResourceModel\Page::class
+        );
     }
 
     protected function _initSelect(): AbstractCollection
     {
         parent::_initSelect();
 
-        $this->getSelect()->join(['page_store' => $this->getTable('catalog_attribute_landing_page_store')],
-            'main_table.page_id = page_store.page_id', ['store_ids' => 'GROUP_CONCAT(page_store.store_id)']);
+        $this->getSelect()->join(
+            ['page_store' => $this->getTable('catalog_attribute_landing_page_store')],
+            'main_table.page_id = page_store.page_id',
+            ['store_ids' => 'GROUP_CONCAT(page_store.store_id)']
+        );
         $this->getSelect()->group('main_table.page_id');
 
         return $this;
@@ -48,7 +50,15 @@ class Collection
 
         $countSelect = $this->getConnection()->select();
 
-        $countSelect->from(new Zend_Db_Expr(sprintf('(%s)', $innerSelect->assemble())), ['COUNT(*)']);
+        $countSelect->from(
+            new Zend_Db_Expr(
+                sprintf(
+                    '(%s)',
+                    $innerSelect->assemble()
+                )
+            ),
+            ['COUNT(*)']
+        );
 
         return $countSelect;
     }
@@ -64,9 +74,20 @@ class Collection
             $storeIds[] = 0;
         }
 
-        $this->addFieldToFilter('page_store.store_id', ['in' => $storeIds]);
+        $this->addFieldToFilter(
+            'page_store.store_id',
+            ['in' => $storeIds]
+        );
 
         return $this;
+    }
+
+    public function addActiveFilter()
+    {
+        $this->addFieldToFilter(
+            'active',
+            ['eq' => 1]
+        );
     }
 
     protected function _afterLoad(): AbstractCollection
@@ -75,8 +96,20 @@ class Collection
 
         /** @var AbstractModel $item */
         foreach ($this->_items as $item) {
-            $item->setOrigData('store_ids', explode(',', $item->getData('store_ids')));
-            $item->setData('store_ids', explode(',', $item->getData('store_ids')));
+            $item->setOrigData(
+                'store_ids',
+                explode(
+                    ',',
+                    $item->getData('store_ids')
+                )
+            );
+            $item->setData(
+                'store_ids',
+                explode(
+                    ',',
+                    $item->getData('store_ids')
+                )
+            );
         }
 
         return $this;

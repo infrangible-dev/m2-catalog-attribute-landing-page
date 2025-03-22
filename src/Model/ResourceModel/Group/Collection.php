@@ -14,23 +14,28 @@ use Zend_Db_Select;
 
 /**
  * @author      Andreas Knollmann
- * @copyright   2014-2024 Softwareentwicklung Andreas Knollmann
+ * @copyright   2014-2025 Softwareentwicklung Andreas Knollmann
  * @license     http://www.opensource.org/licenses/mit-license.php MIT
  */
-class Collection
-    extends AbstractCollection
+class Collection extends AbstractCollection
 {
-    public function _construct(): void
+    protected function _construct(): void
     {
-        $this->_init(Group::class, \Infrangible\CatalogAttributeLandingPage\Model\ResourceModel\Group::class);
+        $this->_init(
+            Group::class,
+            \Infrangible\CatalogAttributeLandingPage\Model\ResourceModel\Group::class
+        );
     }
 
     protected function _initSelect(): AbstractCollection
     {
         parent::_initSelect();
 
-        $this->getSelect()->join(['group_store' => $this->getTable('catalog_attribute_landing_group_store')],
-            'main_table.group_id = group_store.group_id', ['store_ids' => 'GROUP_CONCAT(group_store.store_id)']);
+        $this->getSelect()->join(
+            ['group_store' => $this->getTable('catalog_attribute_landing_group_store')],
+            'main_table.group_id = group_store.group_id',
+            ['store_ids' => 'GROUP_CONCAT(group_store.store_id)']
+        );
         $this->getSelect()->group('main_table.group_id');
 
         return $this;
@@ -45,7 +50,15 @@ class Collection
         $innerSelect->reset(Zend_Db_Select::COLUMNS);
         $innerSelect->columns(new Zend_Db_Expr('DISTINCT main_table.group_id'));
 
-        $countSelect->from(new Zend_Db_Expr(sprintf('(%s)', $innerSelect->assemble())), ['COUNT(*)']);
+        $countSelect->from(
+            new Zend_Db_Expr(
+                sprintf(
+                    '(%s)',
+                    $innerSelect->assemble()
+                )
+            ),
+            ['COUNT(*)']
+        );
 
         return $countSelect;
     }
@@ -61,9 +74,20 @@ class Collection
             $storeIds[] = 0;
         }
 
-        $this->addFieldToFilter('group_store.store_id', ['in' => $storeIds]);
+        $this->addFieldToFilter(
+            'group_store.store_id',
+            ['in' => $storeIds]
+        );
 
         return $this;
+    }
+
+    public function addActiveFilter()
+    {
+        $this->addFieldToFilter(
+            'active',
+            ['eq' => 1]
+        );
     }
 
     protected function _afterLoad(): AbstractCollection
@@ -72,8 +96,20 @@ class Collection
 
         /** @var AbstractModel $item */
         foreach ($this->_items as $item) {
-            $item->setOrigData('store_ids', explode(',', $item->getData('store_ids')));
-            $item->setData('store_ids', explode(',', $item->getData('store_ids')));
+            $item->setOrigData(
+                'store_ids',
+                explode(
+                    ',',
+                    $item->getData('store_ids')
+                )
+            );
+            $item->setData(
+                'store_ids',
+                explode(
+                    ',',
+                    $item->getData('store_ids')
+                )
+            );
         }
 
         return $this;

@@ -16,31 +16,33 @@ use Magento\Framework\UrlInterface;
 
 /**
  * @author      Andreas Knollmann
- * @copyright   2014-2024 Softwareentwicklung Andreas Knollmann
+ * @copyright   2014-2025 Softwareentwicklung Andreas Knollmann
  * @license     http://www.opensource.org/licenses/mit-license.php MIT
  *
- * @method int getPageId()
- * @method void setPageId(int $pageId)
- * @method int|null getAttributeId1()
- * @method void setAttributeId1(int|null $attributeId)
+ * @method string getPageId()
+ * @method void setPageId(string $pageId)
+ * @method string|null getAttributeId1()
+ * @method void setAttributeId1(string|null $attributeId)
  * @method string|array|null getValue1()
  * @method void setValue1(string|array|null $value)
- * @method int|null getAttributeId2()
- * @method void setAttributeId2(int|null $attributeId)
+ * @method string|null getAttributeId2()
+ * @method void setAttributeId2(string|null $attributeId)
  * @method string|array|null getValue2()
  * @method void setValue2(string|array|null $value)
- * @method int|null getAttributeId3()
- * @method void setAttributeId3(int|null $attributeId)
+ * @method string|null getAttributeId3()
+ * @method void setAttributeId3(string|null $attributeId)
  * @method string|array|null getValue3()
  * @method void setValue3(string|array|null $value)
- * @method int|null getAttributeId4()
- * @method void setAttributeId4(int|null $attributeId)
+ * @method string|null getAttributeId4()
+ * @method void setAttributeId4(string|null $attributeId)
  * @method string|array|null getValue4()
  * @method void setValue4(string|array|null $value)
- * @method int|null getAttributeId5()
- * @method void setAttributeId5(int|null $attributeId)
+ * @method string|null getAttributeId5()
+ * @method void setAttributeId5(string|null $attributeId)
  * @method string|array|null getValue5()
  * @method void setValue5(string|array|null $value)
+ * @method string|null getAttributeSetId()
+ * @method void setAttributeSetId(string|null $attributeSetId)
  * @method string|array|null getAttributeOrders()
  * @method void setAttributeOrders(string|array|null $attributeOrders)
  * @method string getAttributeOrder()
@@ -53,8 +55,8 @@ use Magento\Framework\UrlInterface;
  * @method void setHeadline(string $headline)
  * @method string getDescription()
  * @method void setDescription(string $description)
- * @method int getCmsBlockId()
- * @method void setCmsBlockId(int $cmsBlockId)
+ * @method string getCmsBlockId()
+ * @method void setCmsBlockId(string $cmsBlockId)
  * @method string getImage()
  * @method void setImage(string $image)
  * @method string getLogo()
@@ -67,17 +69,16 @@ use Magento\Framework\UrlInterface;
  * @method void setMetaDescription(string $metaDescription)
  * @method string getMetaKeywords()
  * @method void setMetaKeywords(string $metaKeywords)
- * @method int getActive()
- * @method void setActive(int $active)
- * @method int getCheckActive()
- * @method void setCheckActive(int $checkActive)
+ * @method string getActive()
+ * @method void setActive(string $active)
+ * @method string getCheckActive()
+ * @method void setCheckActive(string $checkActive)
  * @method string getCreatedAt()
  * @method void setCreatedAt(string $createdAt)
  * @method string getUpdatedAt()
  * @method void setUpdatedAt(string $updatedAt)
  */
-class Page
-    extends AbstractModel
+class Page extends AbstractModel
 {
     /** @var Url */
     protected $urlHelper;
@@ -88,25 +89,22 @@ class Page
     /** @var string */
     protected $mediaUrl;
 
-    /**
-     * @param Context $context
-     * @param Registry $registry
-     * @param Url $urlHelper
-     * @param Stores $storeHelper
-     * @param AbstractResource|null $resource
-     * @param AbstractDb|null $resourceCollection
-     * @param array $data
-     */
     public function __construct(
         Context $context,
         Registry $registry,
         Url $urlHelper,
         Stores $storeHelper,
-        AbstractResource $resource = null,
-        AbstractDb $resourceCollection = null,
-        array $data = [])
-    {
-        parent::__construct($context, $registry, $resource, $resourceCollection, $data);
+        ?AbstractResource $resource = null,
+        ?AbstractDb $resourceCollection = null,
+        array $data = []
+    ) {
+        parent::__construct(
+            $context,
+            $registry,
+            $resource,
+            $resourceCollection,
+            $data
+        );
 
         $this->urlHelper = $urlHelper;
         $this->storeHelper = $storeHelper;
@@ -125,30 +123,47 @@ class Page
 
     public function getUrl(): string
     {
+        return $this->urlHelper->getUrl('/') . $this->getUrlPath();
+    }
+
+    public function getUrlPath(): string
+    {
+        $urlPath = $this->getUrlKey();
+
         $categoryUrlSuffix = $this->storeHelper->getStoreConfig('catalog/seo/category_url_suffix');
 
-        $url = $this->urlHelper->getUrl('/') . $this->getUrlKey();
-
-        if (!empty($categoryUrlSuffix)) {
-            $url .= $categoryUrlSuffix;
+        if (! empty($categoryUrlSuffix)) {
+            $urlPath .= $categoryUrlSuffix;
         }
 
-        return $url;
+        return $urlPath;
     }
 
     public function getImageUrl(): string
     {
-        return sprintf('%s/%s', $this->mediaUrl, $this->getImage());
+        return sprintf(
+            '%s/%s',
+            $this->mediaUrl,
+            $this->getImage()
+        );
     }
 
     public function getLogoUrl(): string
     {
-        return sprintf('%s/%s', $this->mediaUrl, $this->getLogo());
+        return sprintf(
+            '%s/%s',
+            $this->mediaUrl,
+            $this->getLogo()
+        );
     }
 
     public function getThumbnailUrl(): string
     {
-        return sprintf('%s/%s', $this->mediaUrl, $this->getThumbnail());
+        return sprintf(
+            '%s/%s',
+            $this->mediaUrl,
+            $this->getThumbnail()
+        );
     }
 
     /**
@@ -161,6 +176,15 @@ class Page
      */
     protected function _underscore($name): string
     {
-        return strtolower(trim(preg_replace('/(.)([A-Z])/', '$1_$2', $name), '_'));
+        return strtolower(
+            trim(
+                preg_replace(
+                    '/(.)([A-Z])/',
+                    '$1_$2',
+                    $name
+                ),
+                '_'
+            )
+        );
     }
 }
