@@ -28,7 +28,7 @@
         "mailCatcherVersion": "0.6"
     },
     "ms": {
-        "magentoVersion": "2.4.6-p3",
+        "magentoVersion": "2.4.6-p10",
         "magentoEdition": "community"
     }
 }
