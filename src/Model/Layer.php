@@ -1,6 +1,12 @@
-<?php /** @noinspection PhpDeprecationInspection */
+<?php /** @noinspection PhpDeprecationInspection The constructor of Magento's layer needs the registry. */
 
 declare(strict_types=1);
+
+/**
+ * @author      Andreas Knollmann
+ * @copyright   Copyright (c) 2014-2026 Softwareentwicklung Andreas Knollmann
+ * @license     http://www.opensource.org/licenses/mit-license.php MIT
+ */
 
 namespace Infrangible\CatalogAttributeLandingPage\Model;
 
@@ -14,16 +20,23 @@ use Magento\Framework\Registry;
 use Magento\Store\Model\StoreManagerInterface;
 
 /**
- * @author      Andreas Knollmann
- * @copyright   2014-2024 Softwareentwicklung Andreas Knollmann
- * @license     http://www.opensource.org/licenses/mit-license.php MIT
+ * The layer of the layered navigation of the landing pages, whose state hides the filters of the page attributes.
  */
-class Layer
-    extends \Magento\Catalog\Model\Layer
+class Layer extends \Magento\Catalog\Model\Layer
 {
-    /** @var StateFactory */
-    protected $catalogAttributeLayerStateFactory;
-
+    /**
+     * @param ContextInterface $context
+     * @param \Magento\Catalog\Model\Layer\StateFactory $layerStateFactory
+     * @param CollectionFactory $attributeCollectionFactory
+     * @param Product $catalogProduct
+     * @param StoreManagerInterface $storeManager
+     * @param Registry $registry
+     * @param CategoryRepositoryInterface $categoryRepository
+     * @param StateFactory $catalogAttributeLayerStateFactory
+     * @param array $data
+     *
+     * @phpstan-param array<string, mixed> $data
+     */
     public function __construct(
         ContextInterface $context,
         \Magento\Catalog\Model\Layer\StateFactory $layerStateFactory,
@@ -32,22 +45,33 @@ class Layer
         StoreManagerInterface $storeManager,
         Registry $registry,
         CategoryRepositoryInterface $categoryRepository,
-        StateFactory $catalogAttributeLayerStateFactory,
-        array $data = [])
-    {
+        protected StateFactory $catalogAttributeLayerStateFactory,
+        array $data = []
+    ) {
         parent::__construct(
-            $context, $layerStateFactory, $attributeCollectionFactory, $catalogProduct, $storeManager, $registry,
-            $categoryRepository, $data);
-
-        $this->catalogAttributeLayerStateFactory = $catalogAttributeLayerStateFactory;
+            $context,
+            $layerStateFactory,
+            $attributeCollectionFactory,
+            $catalogProduct,
+            $storeManager,
+            $registry,
+            $categoryRepository,
+            $data
+        );
     }
 
+    /**
+     * Returns the state of the layer with the filters of the landing page.
+     *
+     * @return State
+     */
     public function getState(): State
     {
         $state = $this->getData('state');
 
-        if ($state === null) {
+        if (! $state instanceof State) {
             $state = $this->catalogAttributeLayerStateFactory->create();
+
             $this->setData('state', $state);
         }
 

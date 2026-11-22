@@ -1,192 +1,99 @@
-<?php /** @noinspection PhpDeprecationInspection */
+<?php
 
 declare(strict_types=1);
 
+/**
+ * @author      Andreas Knollmann
+ * @copyright   Copyright (c) 2014-2026 Softwareentwicklung Andreas Knollmann
+ * @license     http://www.opensource.org/licenses/mit-license.php MIT
+ */
+
 namespace Infrangible\CatalogAttributeLandingPage\Controller\Group;
 
-use Exception;
 use FeWeDev\Base\Variables;
+use Infrangible\CatalogAttributeLandingPage\Controller\AbstractView;
 use Infrangible\CatalogAttributeLandingPage\Model\GroupFactory;
-use Infrangible\CatalogAttributeLandingPage\Model\Layer\Category\FilterableAttributeList;
+use Infrangible\CatalogAttributeLandingPage\Model\ResourceModel\GroupFactory as GroupResourceFactory;
 use Infrangible\Core\Helper\Attribute;
 use Infrangible\Core\Helper\Registry;
-use Magento\Catalog\Model\Product;
-use Magento\Framework\App\Action\Action;
-use Magento\Framework\App\Action\Context;
+use Infrangible\Core\Helper\Stores;
+use Magento\Framework\App\RequestInterface;
+use Magento\Framework\Controller\Result\ForwardFactory;
 use Magento\Framework\Controller\ResultInterface;
+use Magento\Framework\View\Result\PageFactory;
 use Psr\Log\LoggerInterface;
 
 /**
- * @author      Andreas Knollmann
- * @copyright   2014-2024 Softwareentwicklung Andreas Knollmann
- * @license     http://www.opensource.org/licenses/mit-license.php MIT
+ * Shows a landing group: the landing pages with the attributes of the group, grouped by their values.
  */
-class View extends Action
+class View extends AbstractView
 {
-    /** @var Registry */
-    protected $registryHelper;
-
-    /** @var Variables */
-    protected $variableHelper;
-
-    /** @var Attribute */
-    protected $eavAttributeHelper;
-
-    /** @var LoggerInterface */
-    protected $logging;
-
-    /** @var GroupFactory */
-    protected $groupFactory;
-
-    /** @var \Infrangible\CatalogAttributeLandingPage\Model\ResourceModel\GroupFactory */
-    protected $groupResourceFactory;
-
-    /** @var FilterableAttributeList */
-    protected $filterableAttributeList;
-
+    /**
+     * @param RequestInterface $request
+     * @param PageFactory $resultPageFactory
+     * @param ForwardFactory $resultForwardFactory
+     * @param Registry $registryHelper
+     * @param Attribute $eavAttributeHelper
+     * @param Stores $storeHelper
+     * @param Variables $variables
+     * @param LoggerInterface $logging
+     * @param GroupFactory $groupFactory
+     * @param GroupResourceFactory $groupResourceFactory
+     */
     public function __construct(
-        Context $context,
+        RequestInterface $request,
+        PageFactory $resultPageFactory,
+        ForwardFactory $resultForwardFactory,
         Registry $registryHelper,
-        Variables $variableHelper,
         Attribute $eavAttributeHelper,
+        Stores $storeHelper,
+        Variables $variables,
         LoggerInterface $logging,
-        GroupFactory $groupFactory,
-        \Infrangible\CatalogAttributeLandingPage\Model\ResourceModel\GroupFactory $groupResourceFactory,
-        FilterableAttributeList $filterableAttributeList
+        protected GroupFactory $groupFactory,
+        protected GroupResourceFactory $groupResourceFactory
     ) {
-        parent::__construct($context);
-
-        $this->registryHelper = $registryHelper;
-        $this->variableHelper = $variableHelper;
-        $this->eavAttributeHelper = $eavAttributeHelper;
-        $this->logging = $logging;
-        $this->groupFactory = $groupFactory;
-        $this->groupResourceFactory = $groupResourceFactory;
-        $this->filterableAttributeList = $filterableAttributeList;
+        parent::__construct(
+            $request,
+            $resultPageFactory,
+            $resultForwardFactory,
+            $registryHelper,
+            $eavAttributeHelper,
+            $storeHelper,
+            $variables,
+            $logging
+        );
     }
 
     /**
-     * @return ResultInterface|void
+     * Shows the landing group of the request parameter group_id.
+     *
+     * @return ResultInterface
      */
-    public function execute()
+    public function execute(): ResultInterface
     {
-        $groupId = $this->getRequest()->getParam('group_id');
-
-        if (! $groupId) {
-            $this->_forward('noRoute');
-            return;
-        }
-
         $group = $this->groupFactory->create();
 
         $this->groupResourceFactory->create()->load(
             $group,
-            $groupId
+            $this->variables->intValue($this->request->getParam('group_id'))
         );
 
-        if (! $group->getId()) {
-            $this->_forward('noRoute');
-            return;
+        if (! $this->isAvailable($group)) {
+            return $this->notFound();
         }
 
-        $this->registryHelper->register(
-            'current_group',
+        $attributeCodes = $this->getAttributeCodes($group);
+
+        if ($attributeCodes === null) {
+            return $this->notFound();
+        }
+
+        $this->registryHelper->register('current_group', $group, true);
+
+        return $this->createResultPage(
             $group,
-            true
+            'infrangible_catalogattributelandingpage_group_view',
+            [implode('_', $attributeCodes)]
         );
-
-        $filterableAttributes = $this->filterableAttributeList->getList();
-
-        $attributeFilterCodes = [];
-
-        for ($i = 1; $i <= 5; $i++) {
-            $attributeId = $group->getDataUsingMethod(
-                sprintf(
-                    'attribute_id%d',
-                    $i
-                )
-            );
-
-            if ($this->variableHelper->isEmpty($attributeId)) {
-                continue;
-            }
-
-            try {
-                $attribute = $this->eavAttributeHelper->getAttribute(
-                    Product::ENTITY,
-                    $attributeId
-                );
-
-                $attributeCode = $attribute->getAttributeCode();
-
-                $isFilterableAttribute = false;
-
-                foreach ($filterableAttributes as $filterableAttribute) {
-                    if ($filterableAttribute->getAttributeCode() === $attributeCode) {
-                        $isFilterableAttribute = true;
-                        break;
-                    }
-                }
-
-                if (! $isFilterableAttribute) {
-                    throw new Exception(
-                        sprintf(
-                            'Use of non filterable attribute: %s',
-                            $attributeCode
-                        )
-                    );
-                }
-            } catch (Exception $exception) {
-                $this->logging->error($exception);
-
-                $this->_forward('noRoute');
-                return;
-            }
-
-            $attributeFilterCodes[] = $attributeCode;
-        }
-
-        $update = $this->_view->getLayout()->getUpdate();
-
-        $update->addHandle('default');
-
-        $this->_view->addActionLayoutHandles();
-        $update->addHandle('infrangible_catalogattributelandingpage_group_view');
-        $update->addHandle(
-            sprintf(
-                'infrangible_catalogattributelandingpage_group_view_%s',
-                implode(
-                    '_',
-                    $attributeFilterCodes
-                )
-            )
-        );
-        $update->addHandle(
-            sprintf(
-                'infrangible_catalogattributelandingpage_group_view_%d',
-                $group->getId()
-            )
-        );
-        $this->_view->loadLayoutUpdates();
-
-        $this->_view->generateLayoutXml()->generateLayoutBlocks();
-
-        $pageConfig = $this->_view->getPage()->getConfig();
-
-        $pageConfig->getTitle()->set(
-            $this->variableHelper->isEmpty($group->getPageTitle()) ? $group->getHeadline() : $group->getPageTitle()
-        );
-
-        if (! $this->variableHelper->isEmpty($group->getMetaDescription())) {
-            $pageConfig->setDescription($group->getMetaDescription());
-        } elseif (! $this->variableHelper->isEmpty($group->getDescription())) {
-            $pageConfig->setDescription($group->getDescription());
-        }
-
-        if (! $this->variableHelper->isEmpty($group->getMetaKeywords())) {
-            $pageConfig->setKeywords($group->getMetaKeywords());
-        }
-
-        return $this->_view->getPage();
     }
 }

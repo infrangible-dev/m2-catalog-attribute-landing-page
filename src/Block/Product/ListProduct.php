@@ -1,11 +1,16 @@
-<?php /** @noinspection PhpDeprecationInspection */
+<?php /** @noinspection PhpDeprecationInspection Magento's product list needs the context of product blocks. */
 
 declare(strict_types=1);
+
+/**
+ * @author      Andreas Knollmann
+ * @copyright   Copyright (c) 2014-2026 Softwareentwicklung Andreas Knollmann
+ * @license     http://www.opensource.org/licenses/mit-license.php MIT
+ */
 
 namespace Infrangible\CatalogAttributeLandingPage\Block\Product;
 
 use Exception;
-use FeWeDev\Base\Variables;
 use Infrangible\CatalogAttributeLandingPage\Model\Page;
 use Infrangible\Core\Helper\Attribute;
 use Infrangible\Core\Helper\Registry;
@@ -18,85 +23,99 @@ use Magento\Framework\Data\Helper\PostHelper;
 use Magento\Framework\Url\Helper\Data;
 
 /**
- * @author      Andreas Knollmann
- * @copyright   Copyright (c) 2014-2024 Softwareentwicklung Andreas Knollmann
- * @license     http://www.opensource.org/licenses/mit-license.php MIT
+ * Product list of a landing page: sortable by the attributes of the page, sorted by its sort attribute and direction.
  */
-class ListProduct
-    extends \Magento\Catalog\Block\Product\ListProduct
+class ListProduct extends \Magento\Catalog\Block\Product\ListProduct
 {
-    /** @var Registry */
-    protected $registryHelper;
-
-    /** @var Attribute */
-    protected $attributeHelper;
-
-    /** @var Variables */
-    protected $variables;
-
+    /**
+     * @param Context $context
+     * @param PostHelper $postDataHelper
+     * @param Resolver $layerResolver
+     * @param CategoryRepositoryInterface $categoryRepository
+     * @param Data $urlHelper
+     * @param Registry $registryHelper
+     * @param Attribute $attributeHelper
+     * @param array $data
+     *
+     * @phpstan-param array<string, mixed> $data
+     */
     public function __construct(
         Context $context,
         PostHelper $postDataHelper,
         Resolver $layerResolver,
         CategoryRepositoryInterface $categoryRepository,
         Data $urlHelper,
-        Registry $registryHelper,
-        Attribute $attributeHelper,
-        Variables $variables,
-        array $data = [])
-    {
+        protected Registry $registryHelper,
+        protected Attribute $attributeHelper,
+        array $data = []
+    ) {
         parent::__construct($context, $postDataHelper, $layerResolver, $categoryRepository, $urlHelper, $data);
-
-        $this->registryHelper = $registryHelper;
-        $this->attributeHelper = $attributeHelper;
-        $this->variables = $variables;
     }
 
     /**
-     * @param Category $category
+     * Returns the current landing page, or null outside of a landing page.
+     *
+     * @return Page|null
      */
-    public function prepareSortableFieldsByCategory($category): ListProduct
+    protected function getPage(): ?Page
     {
-        if (!$this->getDataUsingMethod('available_orders')) {
-            /** @var Page $page */
-            $page = $this->registryHelper->registry('current_page');
+        $page = $this->registryHelper->registry('current_page');
 
-            $attributeOrders = $page->getAttributeOrders();
+        return $page instanceof Page ? $page : null;
+    }
 
-            if (!$this->variables->isEmpty($attributeOrders)) {
-                $pageSortByOptions = [];
+    /**
+     * Sets the attributes of the page as the available sort orders, before the defaults of the category.
+     *
+     * @param Category $category
+     *
+     * @return $this
+     */
+    public function prepareSortableFieldsByCategory($category): static
+    {
+        $attributeOrders = $this->getPage()?->getAttributeOrders() ?? [];
 
-                if (is_array($attributeOrders)) {
-                    foreach ($attributeOrders as $attributeCode) {
-                        try {
-                            $attribute = $this->attributeHelper->getAttribute(Product::ENTITY, $attributeCode);
+        if (! $this->getDataUsingMethod('available_orders') && count($attributeOrders) > 0) {
+            $sortByOptions = [];
 
-                            $pageSortByOptions[$attributeCode] = $attribute->getStoreLabel();
-                        } catch (Exception $exception) {
-                        }
-                    }
+            foreach ($attributeOrders as $attributeCode) {
+                try {
+                    $attribute = $this->attributeHelper->getAttribute(Product::ENTITY, $attributeCode);
+
+                    $sortByOptions[ $attributeCode ] = $attribute->getStoreLabel();
+                } catch (Exception $exception) {
+                    $this->_logger->error($exception);
                 }
-
-                $this->setDataUsingMethod('available_orders', $pageSortByOptions);
             }
+
+            $this->setDataUsingMethod('available_orders', $sortByOptions);
         }
 
-        return parent::prepareSortableFieldsByCategory($category);
+        parent::prepareSortableFieldsByCategory($category);
+
+        return $this;
     }
 
+    /**
+     * Returns the sort attribute of the page.
+     *
+     * @return string|null
+     */
     public function getDefaultSortBy(): ?string
     {
-        /** @var Page $page */
-        $page = $this->registryHelper->registry('current_page');
-
-        return $page ? $page->getAttributeOrder() : null;
+        return $this->getPage()?->getAttributeOrder();
     }
 
+    /**
+     * Returns the sort direction of the page, or the default direction.
+     *
+     * @return string|null
+     */
     public function getDefaultDirection(): ?string
     {
-        /** @var Page $page */
-        $page = $this->registryHelper->registry('current_page');
+        $defaultDirection = $this->getData('default_direction');
 
-        return $page ? $page->getAttributeOrderDirection() : null;
+        return $this->getPage()?->getAttributeOrderDirection() ??
+            (is_string($defaultDirection) ? $defaultDirection : null);
     }
 }

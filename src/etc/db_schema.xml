@@ -1,0 +1,131 @@
+<?xml version="1.0"?>
+
+<!--
+ * @author      Andreas Knollmann
+ * @copyright   Copyright (c) 2014-2026 Softwareentwicklung Andreas Knollmann
+ * @license     http://www.opensource.org/licenses/mit-license.php MIT
+-->
+<schema xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:Setup/Declaration/Schema/etc/schema.xsd">
+    <table name="catalog_attribute_landing_page" resource="default" engine="innodb" comment="Catalog Attribute Landing Page">
+        <column xsi:type="int" name="page_id" padding="10" unsigned="true" nullable="false" identity="true" comment="Page ID"/>
+        <column xsi:type="smallint" name="attribute_id1" padding="5" unsigned="true" nullable="false" identity="false" comment="Attribute ID 1"/>
+        <column xsi:type="varchar" name="value1" nullable="false" length="255" comment="Value 1"/>
+        <column xsi:type="smallint" name="attribute_id2" padding="5" unsigned="true" nullable="true" identity="false" comment="Attribute ID 2"/>
+        <column xsi:type="varchar" name="value2" nullable="true" length="255" comment="Value 2"/>
+        <column xsi:type="smallint" name="attribute_id3" padding="5" unsigned="true" nullable="true" identity="false" comment="Attribute ID 3"/>
+        <column xsi:type="varchar" name="value3" nullable="true" length="255" comment="Value 3"/>
+        <column xsi:type="smallint" name="attribute_id4" padding="5" unsigned="true" nullable="true" identity="false" comment="Attribute ID 4"/>
+        <column xsi:type="varchar" name="value4" nullable="true" length="255" comment="Value 4"/>
+        <column xsi:type="smallint" name="attribute_id5" padding="5" unsigned="true" nullable="true" identity="false" comment="Attribute ID 5"/>
+        <column xsi:type="varchar" name="value5" nullable="true" length="255" comment="Value 5"/>
+        <column xsi:type="smallint" name="attribute_set_id" padding="5" unsigned="true" nullable="true" identity="false" comment="Attribute Set ID"/>
+        <column xsi:type="varchar" name="attribute_orders" nullable="true" length="1024" comment="Available Sort Attributes"/>
+        <column xsi:type="varchar" name="attribute_order" nullable="true" length="255" comment="Sort Attribute"/>
+        <column xsi:type="varchar" name="attribute_order_direction" nullable="true" length="4" comment="Sort Direction"/>
+        <column xsi:type="varchar" name="url_key" nullable="false" length="255" comment="URL Key"/>
+        <column xsi:type="varchar" name="headline" nullable="false" length="255" comment="Headline"/>
+        <column xsi:type="text" name="description" nullable="false" comment="Description"/>
+        <column xsi:type="int" name="cms_block_id" padding="10" unsigned="true" nullable="true" identity="false" comment="CMS Block ID"/>
+        <column xsi:type="int" name="additional_cms_block_id" padding="10" unsigned="true" nullable="true" identity="false" comment="Additional CMS Block ID"/>
+        <column xsi:type="int" name="seo_cms_block_id" padding="10" unsigned="true" nullable="true" identity="false" comment="SEO CMS Block ID"/>
+        <column xsi:type="varchar" name="image" nullable="true" length="255" comment="Image"/>
+        <column xsi:type="varchar" name="logo" nullable="true" length="255" comment="Logo"/>
+        <column xsi:type="varchar" name="thumbnail" nullable="true" length="255" comment="Thumbnail"/>
+        <column xsi:type="varchar" name="page_title" nullable="false" length="255" comment="Page Title"/>
+        <column xsi:type="varchar" name="meta_description" nullable="false" length="255" comment="Meta Description"/>
+        <column xsi:type="varchar" name="meta_keywords" nullable="false" length="255" comment="Meta Keywords"/>
+        <column xsi:type="smallint" name="active" padding="5" unsigned="true" nullable="false" identity="false" default="0" comment="Active"/>
+        <column xsi:type="datetime" name="created_at" on_update="false" nullable="false" comment="Creation Time"/>
+        <column xsi:type="datetime" name="updated_at" on_update="false" nullable="false" comment="Update Time"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="page_id"/>
+        </constraint>
+        <constraint xsi:type="foreign" referenceId="CATALOG_ATTRIBUTE_LANDING_PAGE_ATTRIBUTE_ID1_EAV_ATTRIBUTE_ATTRIBUTE_ID" table="catalog_attribute_landing_page" column="attribute_id1" referenceTable="eav_attribute" referenceColumn="attribute_id" onDelete="CASCADE"/>
+        <constraint xsi:type="foreign" referenceId="CATALOG_ATTRIBUTE_LANDING_PAGE_ATTRIBUTE_ID2_EAV_ATTRIBUTE_ATTRIBUTE_ID" table="catalog_attribute_landing_page" column="attribute_id2" referenceTable="eav_attribute" referenceColumn="attribute_id" onDelete="CASCADE"/>
+        <constraint xsi:type="foreign" referenceId="CATALOG_ATTRIBUTE_LANDING_PAGE_ATTRIBUTE_ID3_EAV_ATTRIBUTE_ATTRIBUTE_ID" table="catalog_attribute_landing_page" column="attribute_id3" referenceTable="eav_attribute" referenceColumn="attribute_id" onDelete="CASCADE"/>
+        <constraint xsi:type="foreign" referenceId="CATALOG_ATTRIBUTE_LANDING_PAGE_ATTRIBUTE_ID4_EAV_ATTRIBUTE_ATTRIBUTE_ID" table="catalog_attribute_landing_page" column="attribute_id4" referenceTable="eav_attribute" referenceColumn="attribute_id" onDelete="CASCADE"/>
+        <constraint xsi:type="foreign" referenceId="CATALOG_ATTRIBUTE_LANDING_PAGE_ATTRIBUTE_ID5_EAV_ATTRIBUTE_ATTRIBUTE_ID" table="catalog_attribute_landing_page" column="attribute_id5" referenceTable="eav_attribute" referenceColumn="attribute_id" onDelete="CASCADE"/>
+        <index referenceId="CATALOG_ATTRIBUTE_LANDING_PAGE_ATTRIBUTE_ID1" indexType="btree">
+            <column name="attribute_id1"/>
+        </index>
+        <index referenceId="CATALOG_ATTRIBUTE_LANDING_PAGE_ATTRIBUTE_ID2" indexType="btree">
+            <column name="attribute_id2"/>
+        </index>
+        <index referenceId="CATALOG_ATTRIBUTE_LANDING_PAGE_ATTRIBUTE_ID3" indexType="btree">
+            <column name="attribute_id3"/>
+        </index>
+        <index referenceId="CATALOG_ATTRIBUTE_LANDING_PAGE_ATTRIBUTE_ID4" indexType="btree">
+            <column name="attribute_id4"/>
+        </index>
+        <index referenceId="CATALOG_ATTRIBUTE_LANDING_PAGE_ATTRIBUTE_ID5" indexType="btree">
+            <column name="attribute_id5"/>
+        </index>
+    </table>
+    <table name="catalog_attribute_landing_page_store" resource="default" engine="innodb" comment="Catalog Attribute Landing Page Stores">
+        <column xsi:type="int" name="page_id" padding="10" unsigned="true" nullable="false" identity="false" comment="Catalog Attribute Landing Page ID"/>
+        <column xsi:type="smallint" name="store_id" padding="5" unsigned="true" nullable="false" identity="false" comment="Store ID"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="page_id"/>
+            <column name="store_id"/>
+        </constraint>
+        <constraint xsi:type="foreign" referenceId="CATALOG_ATTRIBUTE_LANDING_PAGE_STORE_PAGE_ID_CATALOG_ATTRIBUTE_LANDING_PAGE_PAGE_ID" table="catalog_attribute_landing_page_store" column="page_id" referenceTable="catalog_attribute_landing_page" referenceColumn="page_id" onDelete="CASCADE"/>
+        <constraint xsi:type="foreign" referenceId="CATALOG_ATTRIBUTE_LANDING_PAGE_STORE_STORE_ID_STORE_STORE_ID" table="catalog_attribute_landing_page_store" column="store_id" referenceTable="store" referenceColumn="store_id" onDelete="CASCADE"/>
+        <index referenceId="CATALOG_ATTRIBUTE_LANDING_PAGE_STORE_STORE_ID" indexType="btree">
+            <column name="store_id"/>
+        </index>
+    </table>
+    <table name="catalog_attribute_landing_group" resource="default" engine="innodb" comment="Catalog Attribute Landing Group">
+        <column xsi:type="int" name="group_id" padding="10" unsigned="true" nullable="false" identity="true" comment="Group ID"/>
+        <column xsi:type="smallint" name="attribute_id1" padding="5" unsigned="true" nullable="false" identity="false" comment="Attribute ID 1"/>
+        <column xsi:type="smallint" name="attribute_id2" padding="5" unsigned="true" nullable="true" identity="false" comment="Attribute ID 2"/>
+        <column xsi:type="smallint" name="attribute_id3" padding="5" unsigned="true" nullable="true" identity="false" comment="Attribute ID 3"/>
+        <column xsi:type="smallint" name="attribute_id4" padding="5" unsigned="true" nullable="true" identity="false" comment="Attribute ID 4"/>
+        <column xsi:type="smallint" name="attribute_id5" padding="5" unsigned="true" nullable="true" identity="false" comment="Attribute ID 5"/>
+        <column xsi:type="varchar" name="url_key" nullable="false" length="255" comment="URL Key"/>
+        <column xsi:type="varchar" name="headline" nullable="false" length="255" comment="Headline"/>
+        <column xsi:type="text" name="description" nullable="false" comment="Description"/>
+        <column xsi:type="int" name="cms_block_id" padding="10" unsigned="true" nullable="true" identity="false" comment="CMS Block ID"/>
+        <column xsi:type="varchar" name="page_title" nullable="false" length="255" comment="Page Title"/>
+        <column xsi:type="varchar" name="meta_description" nullable="false" length="255" comment="Meta Description"/>
+        <column xsi:type="varchar" name="meta_keywords" nullable="false" length="255" comment="Meta Keywords"/>
+        <column xsi:type="smallint" name="active" padding="5" unsigned="true" nullable="false" identity="false" default="0" comment="Active"/>
+        <column xsi:type="datetime" name="created_at" on_update="false" nullable="false" comment="Creation Time"/>
+        <column xsi:type="datetime" name="updated_at" on_update="false" nullable="false" comment="Update Time"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="group_id"/>
+        </constraint>
+        <constraint xsi:type="foreign" referenceId="CATALOG_ATTRIBUTE_LANDING_GROUP_ATTRIBUTE_ID1_EAV_ATTRIBUTE_ATTRIBUTE_ID" table="catalog_attribute_landing_group" column="attribute_id1" referenceTable="eav_attribute" referenceColumn="attribute_id" onDelete="CASCADE"/>
+        <constraint xsi:type="foreign" referenceId="CATALOG_ATTRIBUTE_LANDING_GROUP_ATTRIBUTE_ID2_EAV_ATTRIBUTE_ATTRIBUTE_ID" table="catalog_attribute_landing_group" column="attribute_id2" referenceTable="eav_attribute" referenceColumn="attribute_id" onDelete="CASCADE"/>
+        <constraint xsi:type="foreign" referenceId="CATALOG_ATTRIBUTE_LANDING_GROUP_ATTRIBUTE_ID3_EAV_ATTRIBUTE_ATTRIBUTE_ID" table="catalog_attribute_landing_group" column="attribute_id3" referenceTable="eav_attribute" referenceColumn="attribute_id" onDelete="CASCADE"/>
+        <constraint xsi:type="foreign" referenceId="CATALOG_ATTRIBUTE_LANDING_GROUP_ATTRIBUTE_ID4_EAV_ATTRIBUTE_ATTRIBUTE_ID" table="catalog_attribute_landing_group" column="attribute_id4" referenceTable="eav_attribute" referenceColumn="attribute_id" onDelete="CASCADE"/>
+        <constraint xsi:type="foreign" referenceId="CATALOG_ATTRIBUTE_LANDING_GROUP_ATTRIBUTE_ID5_EAV_ATTRIBUTE_ATTRIBUTE_ID" table="catalog_attribute_landing_group" column="attribute_id5" referenceTable="eav_attribute" referenceColumn="attribute_id" onDelete="CASCADE"/>
+        <index referenceId="CATALOG_ATTRIBUTE_LANDING_GROUP_ATTRIBUTE_ID1" indexType="btree">
+            <column name="attribute_id1"/>
+        </index>
+        <index referenceId="CATALOG_ATTRIBUTE_LANDING_GROUP_ATTRIBUTE_ID2" indexType="btree">
+            <column name="attribute_id2"/>
+        </index>
+        <index referenceId="CATALOG_ATTRIBUTE_LANDING_GROUP_ATTRIBUTE_ID3" indexType="btree">
+            <column name="attribute_id3"/>
+        </index>
+        <index referenceId="CATALOG_ATTRIBUTE_LANDING_GROUP_ATTRIBUTE_ID4" indexType="btree">
+            <column name="attribute_id4"/>
+        </index>
+        <index referenceId="CATALOG_ATTRIBUTE_LANDING_GROUP_ATTRIBUTE_ID5" indexType="btree">
+            <column name="attribute_id5"/>
+        </index>
+    </table>
+    <table name="catalog_attribute_landing_group_store" resource="default" engine="innodb" comment="Catalog Attribute Landing Group Stores">
+        <column xsi:type="int" name="group_id" padding="10" unsigned="true" nullable="false" identity="false" comment="Catalog Attribute Landing Group ID"/>
+        <column xsi:type="smallint" name="store_id" padding="5" unsigned="true" nullable="false" identity="false" comment="Store ID"/>
+        <constraint xsi:type="primary" referenceId="PRIMARY">
+            <column name="group_id"/>
+            <column name="store_id"/>
+        </constraint>
+        <constraint xsi:type="foreign" referenceId="CATALOG_ATTRIBUTE_LANDING_GROUP_STORE_GROUP_ID_CATALOG_ATTRIBUTE_LANDING_GROUP_GROUP_ID" table="catalog_attribute_landing_group_store" column="group_id" referenceTable="catalog_attribute_landing_group" referenceColumn="group_id" onDelete="CASCADE"/>
+        <constraint xsi:type="foreign" referenceId="CATALOG_ATTRIBUTE_LANDING_GROUP_STORE_STORE_ID_STORE_STORE_ID" table="catalog_attribute_landing_group_store" column="store_id" referenceTable="store" referenceColumn="store_id" onDelete="CASCADE"/>
+        <index referenceId="CATALOG_ATTRIBUTE_LANDING_GROUP_STORE_STORE_ID" indexType="btree">
+            <column name="store_id"/>
+        </index>
+    </table>
+</schema>

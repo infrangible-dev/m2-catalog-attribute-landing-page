@@ -2,7 +2,7 @@
 
 <!--
  * @author      Andreas Knollmann
- * @copyright   2014-2024 Softwareentwicklung Andreas Knollmann
+ * @copyright   Copyright (c) 2014-2026 Softwareentwicklung Andreas Knollmann
  * @license     http://www.opensource.org/licenses/mit-license.php MIT
 -->
 <config xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="urn:magento:framework:ObjectManager/etc/config.xsd">
@@ -24,9 +24,26 @@
         <arguments>
             <argument name="collectionProvider" xsi:type="object">Infrangible\CatalogAttributeLandingPage\Model\Layer\ItemCollectionProvider</argument>
             <argument name="stateKey" xsi:type="object">Infrangible\CatalogAttributeLandingPage\Model\Layer\StateKey</argument>
-            <argument name="collectionFilter" xsi:type="object">Infrangible\CatalogAttributeLandingPage\Model\Layer\CollectionFilter</argument>
+            <argument name="collectionFilter" xsi:type="object">Magento\Catalog\Model\Layer\Category\CollectionFilter</argument>
         </arguments>
     </virtualType>
+    <!-- the products of a landing page: the search collection of categories (with the pagination and total count of
+         the search engine) with the search request of the landing pages -->
+    <virtualType name="Infrangible\CatalogAttributeLandingPage\Model\ResourceModel\Product\Collection" type="elasticsearchCategoryCollection">
+        <arguments>
+            <argument name="searchRequestName" xsi:type="string">landing_page_container</argument>
+        </arguments>
+    </virtualType>
+    <virtualType name="Infrangible\CatalogAttributeLandingPage\Model\ResourceModel\Product\CollectionFactory" type="Magento\Catalog\Model\ResourceModel\Product\CollectionFactory">
+        <arguments>
+            <argument name="instanceName" xsi:type="string">Infrangible\CatalogAttributeLandingPage\Model\ResourceModel\Product\Collection</argument>
+        </arguments>
+    </virtualType>
+    <type name="Infrangible\CatalogAttributeLandingPage\Model\Layer\ItemCollectionProvider">
+        <arguments>
+            <argument name="productCollectionFactory" xsi:type="object">Infrangible\CatalogAttributeLandingPage\Model\ResourceModel\Product\CollectionFactory</argument>
+        </arguments>
+    </type>
     <virtualType name="additionalFieldsProviderForElasticsearch">
         <arguments>
             <argument name="fieldsProviders" xsi:type="array">

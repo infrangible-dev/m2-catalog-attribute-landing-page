@@ -1,190 +1,157 @@
-<?php /** @noinspection PhpDeprecationInspection */
+<?php
 
 declare(strict_types=1);
 
+/**
+ * @author      Andreas Knollmann
+ * @copyright   Copyright (c) 2014-2026 Softwareentwicklung Andreas Knollmann
+ * @license     http://www.opensource.org/licenses/mit-license.php MIT
+ */
+
 namespace Infrangible\CatalogAttributeLandingPage\Block;
 
+use Infrangible\CatalogAttributeLandingPage\Model\Page as LandingPage;
 use Infrangible\CatalogAttributeLandingPage\Model\PageFactory;
 use Infrangible\Core\Helper\Registry;
 use Infrangible\Core\Helper\Stores;
-use Magento\Cms\Block\Block;
-use Magento\Framework\Exception\LocalizedException;
+use Magento\Framework\Exception\NoSuchEntityException;
 use Magento\Framework\View\Element\Template;
-use Magento\Theme\Block\Html\Breadcrumbs;
 use Psr\Log\LoggerInterface;
 
 /**
- * @author      Andreas Knollmann
- * @copyright   Copyright (c) 2014-2024 Softwareentwicklung Andreas Knollmann
- * @license     http://www.opensource.org/licenses/mit-license.php MIT
+ * Shows parts of the current landing page: the products, texts, images and CMS blocks.
  */
-class Page
-    extends Template
+class Page extends AbstractLanding
 {
-    /** @var Registry */
-    protected $registryHelper;
+    /** @var LandingPage|null */
+    private ?LandingPage $page = null;
 
-    /** @var Stores */
-    protected $storeHelper;
-
-    /** @var LoggerInterface */
-    protected $logging;
-
-    /** @var PageFactory */
-    protected $pageFactory;
-
-    /** @var \Infrangible\CatalogAttributeLandingPage\Model\Page */
-    private $page;
-
+    /**
+     * @param Template\Context $context
+     * @param Registry $registryHelper
+     * @param LoggerInterface $logging
+     * @param Stores $storeHelper
+     * @param PageFactory $pageFactory
+     * @param array $data
+     *
+     * @phpstan-param array<string, mixed> $data
+     */
     public function __construct(
         Template\Context $context,
         Registry $registryHelper,
-        Stores $storeHelper,
         LoggerInterface $logging,
-        PageFactory $pageFactory,
-        array $data = [])
-    {
-        parent::__construct($context, $data);
-
-        $this->registryHelper = $registryHelper;
-        $this->storeHelper = $storeHelper;
-        $this->logging = $logging;
-        $this->pageFactory = $pageFactory;
+        protected Stores $storeHelper,
+        protected PageFactory $pageFactory,
+        array $data = []
+    ) {
+        parent::__construct($context, $registryHelper, $logging, $data);
     }
 
     /**
-     * @throws LocalizedException
+     * Returns the current landing page, or an empty one outside of a landing page.
+     *
+     * @return LandingPage
      */
-    protected function _prepareLayout(): Page
+    public function getLandingObject(): LandingPage
     {
-        parent::_prepareLayout();
-
-        $breadcrumbsBlock = $this->getLayout()->getBlock('breadcrumbs');
-
-        if ($breadcrumbsBlock instanceof Breadcrumbs) {
-            $page = $this->getPage();
-
-            $breadcrumbsBlock->addCrumb('home', [
-                'label' => __('Home'),
-                'title' => __('Go to Home Page'),
-                'link' => $this->_storeManager->getStore()->getBaseUrl()]);
-
-            $breadcrumbsBlock->addCrumb(
-                'landing_page', ['label' => $page->getHeadline(), 'title' => $page->getHeadline()]);
-        }
-
-        return $this;
+        return $this->getPage();
     }
 
-    public function getPage(): \Infrangible\CatalogAttributeLandingPage\Model\Page
+    /**
+     * Returns the current landing page, or an empty one outside of a landing page.
+     *
+     * @return LandingPage
+     */
+    public function getPage(): LandingPage
     {
         if ($this->page === null) {
-            $this->page = $this->registryHelper->registry('current_page');
+            $page = $this->registryHelper->registry('current_page');
 
-            if (!$this->page || !$this->page->getId()) {
-                $this->page = $this->pageFactory->create();
-            }
+            $this->page = $page instanceof LandingPage ? $page : $this->pageFactory->create();
         }
 
         return $this->page;
     }
 
-    public function getHeadline(): string
-    {
-        return $this->stripTags($this->getPage()->getHeadline());
-    }
-
+    /**
+     * Returns the HTML of the product list.
+     *
+     * @return string
+     */
     public function getProductListHtml(): string
     {
         return $this->getChildHtml('landing_page.products.list');
     }
 
-    public function getCmsBlockHtml(): string
-    {
-        if (!$this->getData('cms_block_html')) {
-            try {
-                $layout = $this->getLayout();
-
-                /** @var Block $cmsBlock */
-                $cmsBlock = $layout->createBlock(Block::class);
-
-                $blockId = $this->getPage()->getCmsBlockId();
-
-                if ($blockId) {
-                    $cmsBlock->setData('block_id', $blockId);
-
-                    $html = $cmsBlock->toHtml();
-                } else {
-                    $html = '';
-                }
-
-                $this->setData('cms_block_html', $html);
-            } catch (LocalizedException $exception) {
-                $this->logging->error($exception);
-            }
-        }
-
-        return $this->getData('cms_block_html');
-    }
-
+    /**
+     * Returns the HTML of the additional CMS block.
+     *
+     * @return string
+     */
     public function getAdditionalCmsBlockHtml(): string
     {
-        if (!$this->getData('additional_cms_block_html')) {
-            try {
-                $layout = $this->getLayout();
-
-                /** @var Block $cmsBlock */
-                $cmsBlock = $layout->createBlock(Block::class);
-
-                $blockId = $this->getPage()->getData('additional_cms_block_id');
-
-                if ($blockId) {
-                    $cmsBlock->setData('block_id', $blockId);
-
-                    $html = $cmsBlock->toHtml();
-                } else {
-                    $html = '';
-                }
-
-                $this->setData('additional_cms_block_html', $html);
-            } catch (LocalizedException $exception) {
-                $this->logging->error($exception);
-            }
-        }
-
-        return $this->getData('additional_cms_block_html');
+        return $this->renderCmsBlock($this->getPage()->getAdditionalCmsBlockId());
     }
 
+    /**
+     * Returns the HTML of the SEO CMS block.
+     *
+     * @return string
+     */
     public function getSeoCmsBlockHtml(): string
     {
-        if (!$this->getData('seo_cms_block_html')) {
-            try {
-                $layout = $this->getLayout();
-
-                /** @var Block $cmsBlock */
-                $cmsBlock = $layout->createBlock(Block::class);
-
-                $blockId = $this->getPage()->getData('seo_cms_block_id');
-
-                if ($blockId) {
-                    $cmsBlock->setData('block_id', $blockId);
-
-                    $html = $cmsBlock->toHtml();
-                } else {
-                    $html = '';
-                }
-
-                $this->setData('seo_cms_block_html', $html);
-            } catch (LocalizedException $exception) {
-                $this->logging->error($exception);
-            }
-        }
-
-        return $this->getData('seo_cms_block_html');
+        return $this->renderCmsBlock($this->getPage()->getSeoCmsBlockId());
     }
 
-    public function getImagePosition(): ?string
+    /**
+     * Returns the position of the image: product_list, description or cms.
+     *
+     * @return string
+     */
+    public function getImagePosition(): string
     {
-        return $this->storeHelper->getStoreConfig('infrangible_catalogattributelandingpage/general/image_position');
+        $imagePosition = $this->storeHelper->getStoreConfig(
+            'infrangible_catalogattributelandingpage/general/image_position'
+        );
+
+        return is_string($imagePosition) ? $imagePosition : 'product_list';
+    }
+
+    /**
+     * Returns the URL of the image if it is shown at the position, else null.
+     *
+     * @param string $position
+     *
+     * @return string|null
+     */
+    public function getImageUrlAt(string $position): ?string
+    {
+        if ($this->getImagePosition() !== $position) {
+            return null;
+        }
+
+        try {
+            return $this->getPage()->getImageUrl();
+        } catch (NoSuchEntityException $exception) {
+            $this->logging->error($exception);
+
+            return null;
+        }
+    }
+
+    /**
+     * Returns the URL of the logo, or null if the page has none.
+     *
+     * @return string|null
+     */
+    public function getLogoUrl(): ?string
+    {
+        try {
+            return $this->getPage()->getLogoUrl();
+        } catch (NoSuchEntityException $exception) {
+            $this->logging->error($exception);
+
+            return null;
+        }
     }
 }

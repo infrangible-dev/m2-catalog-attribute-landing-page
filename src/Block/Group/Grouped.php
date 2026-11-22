@@ -2,12 +2,18 @@
 
 declare(strict_types=1);
 
+/**
+ * @author      Andreas Knollmann
+ * @copyright   Copyright (c) 2014-2026 Softwareentwicklung Andreas Knollmann
+ * @license     http://www.opensource.org/licenses/mit-license.php MIT
+ */
+
 namespace Infrangible\CatalogAttributeLandingPage\Block\Group;
 
 use Exception;
 use FeWeDev\Base\Arrays;
 use FeWeDev\Base\Variables;
-use Infrangible\CatalogAttributeLandingPage\Block\Group\Grouped\Pages;
+use Infrangible\CatalogAttributeLandingPage\Model\AbstractLanding;
 use Infrangible\CatalogAttributeLandingPage\Model\Group;
 use Infrangible\CatalogAttributeLandingPage\Model\GroupFactory;
 use Infrangible\CatalogAttributeLandingPage\Model\Page;
@@ -18,160 +24,117 @@ use Infrangible\Core\Helper\Stores;
 use Magento\Catalog\Model\Product;
 use Magento\Framework\Data\Collection;
 use Magento\Framework\Exception\LocalizedException;
-use Magento\Framework\Exception\NotFoundException;
 use Magento\Framework\View\Element\Template;
 use Psr\Log\LoggerInterface;
 
 /**
- * @author      Andreas Knollmann
- * @copyright   Copyright (c) 2014-2024 Softwareentwicklung Andreas Knollmann
- * @license     http://www.opensource.org/licenses/mit-license.php MIT
+ * Shows the landing pages of the current group, grouped by the values of their attributes: one level per attribute,
+ * with a headline per value.
  */
-class Grouped
-    extends Template
+class Grouped extends Template
 {
-    /** @var Registry */
-    protected $registryHelper;
+    /** @var int level of the grouping, the first attribute is level 1 */
+    private int $level = 1;
 
-    /** @var Stores */
-    protected $storeHelper;
+    /** @var Group|null */
+    private ?Group $group = null;
 
-    /** @var Variables */
-    protected $variables;
+    /** @var array<int|string, mixed>|null the pages by the values of their attributes */
+    private ?array $groupedPages = null;
 
-    /** @var Arrays */
-    protected $arrays;
-
-    /** @var Attribute */
-    protected $eavAttributeHelper;
-
-    /** @var LoggerInterface */
-    protected $logging;
-
-    /** @var GroupFactory */
-    protected $groupFactory;
-
-    /** @var CollectionFactory */
-    protected $pageCollectionFactory;
-
-    /** @var int */
-    private $level = 1;
-
-    /** @var Group */
-    private $group;
-
-    /** @var array */
-    private $groupedPages;
-
+    /**
+     * @param Template\Context $context
+     * @param Registry $registryHelper
+     * @param Stores $storeHelper
+     * @param Variables $variables
+     * @param Arrays $arrays
+     * @param Attribute $eavAttributeHelper
+     * @param LoggerInterface $logging
+     * @param GroupFactory $groupFactory
+     * @param CollectionFactory $pageCollectionFactory
+     * @param array $data
+     *
+     * @phpstan-param array<string, mixed> $data
+     */
     public function __construct(
         Template\Context $context,
-        Registry $registryHelper,
-        Stores $storeHelper,
-        Variables $variables,
-        Arrays $arrays,
-        Attribute $eavAttributeHelper,
-        LoggerInterface $logging,
-        GroupFactory $groupFactory,
-        CollectionFactory $pageCollectionFactory,
-        array $data = [])
-    {
+        protected Registry $registryHelper,
+        protected Stores $storeHelper,
+        protected Variables $variables,
+        protected Arrays $arrays,
+        protected Attribute $eavAttributeHelper,
+        protected LoggerInterface $logging,
+        protected GroupFactory $groupFactory,
+        protected CollectionFactory $pageCollectionFactory,
+        array $data = []
+    ) {
         parent::__construct($context, $data);
-
-        $this->registryHelper = $registryHelper;
-        $this->storeHelper = $storeHelper;
-        $this->variables = $variables;
-        $this->arrays = $arrays;
-        $this->eavAttributeHelper = $eavAttributeHelper;
-        $this->logging = $logging;
-        $this->groupFactory = $groupFactory;
-        $this->pageCollectionFactory = $pageCollectionFactory;
     }
 
+    /**
+     * Returns the level of the grouping.
+     *
+     * @return int
+     */
     public function getLevel(): int
     {
         return $this->level;
     }
 
-    public function setLevel(int $level)
+    /**
+     * Sets the level of the grouping.
+     *
+     * @param int $level
+     *
+     * @return void
+     */
+    public function setLevel(int $level): void
     {
         $this->level = $level;
     }
 
+    /**
+     * Returns the current landing group, or an empty one outside of a landing group.
+     *
+     * @return Group
+     */
     public function getGroup(): Group
     {
         if ($this->group === null) {
-            $this->group = $this->registryHelper->registry('current_group');
+            $group = $this->registryHelper->registry('current_group');
 
-            if (!$this->group || !$this->group->getId()) {
-                $this->group = $this->groupFactory->create();
-            }
+            $this->group = $group instanceof Group ? $group : $this->groupFactory->create();
         }
 
         return $this->group;
     }
 
+    /**
+     * Returns the active landing pages of the store view with the attributes of the group, by their values.
+     *
+     * On the last level the values are lists of pages, on the levels above arrays of the next level, sorted by the
+     * values.
+     *
+     * @return array<int|string, mixed>
+     */
     public function getGroupedPages(): array
     {
         if ($this->groupedPages === null) {
             $groupedPages = [];
 
             try {
-                $pageCollection = $this->pageCollectionFactory->create();
+                foreach ($this->loadPages() as $page) {
+                    $groupKeys = $this->getGroupKeys($page);
 
-                for ($i = 1; $i <= 5; $i++) {
-                    $attributeId = $this->getGroup()->getDataUsingMethod(sprintf('attribute_id%d', $i));
-
-                    $pageCollection->addFieldToFilter(
-                        sprintf('attribute_id%d', $i),
-                        $this->variables->isEmpty($attributeId) ? ['null' => true] : ['eq' => $attributeId]);
-
-                    $pageCollection->addFieldToFilter(
-                        sprintf('value%d', $i),
-                        $this->variables->isEmpty($attributeId) ? ['null' => true] : ['notnull' => true]);
-                }
-
-                $pageCollection->addFieldToFilter('active', ['eq' => 1]);
-                $pageCollection->addStoreFilter($this->storeHelper->getStore()->getId());
-                $pageCollection->addOrder('main_table.headline', Collection::SORT_ORDER_ASC);
-                $pageCollection->load();
-
-                $items = $pageCollection->getItems();
-
-                $pages = array_values($items);
-
-                /** @var Page $page */
-                foreach ($pages as $page) {
-                    $groupKeys = [];
-
-                    for ($i = 1; $i <= 5; $i++) {
-                        $attributeId = $page->getDataUsingMethod(sprintf('attribute_id%d', $i));
-
-                        if ($this->variables->isEmpty($attributeId)) {
-                            break;
-                        }
-
-                        $attribute = $this->eavAttributeHelper->getAttribute(Product::ENTITY, $attributeId);
-
-                        $value = $page->getDataUsingMethod(sprintf('value%d', $i));
-
-                        if ($attribute->usesSource()) {
-                            $value = $attribute->getSource()->getOptionText($value);
-                        }
-
-                        if (!is_string($value) && !is_int($value)) {
-                            continue 2;
-                        }
-
-                        $groupKeys[] = $value;
+                    if ($groupKeys !== null) {
+                        $groupedPages = $this->arrays->addDeepValue($groupedPages, $groupKeys, $page);
                     }
-
-                    $groupedPages = $this->arrays->addDeepValue($groupedPages, $groupKeys, $page);
                 }
-            } catch (NotFoundException|Exception $exception) {
-                $this->logging->error($exception->getMessage());
+            } catch (Exception $exception) {
+                $this->logging->error($exception);
             }
 
-            $this->ksortRecursive($groupedPages);
+            $this->sortRecursive($groupedPages);
 
             $this->groupedPages = $groupedPages;
         }
@@ -179,70 +142,185 @@ class Grouped
         return $this->groupedPages;
     }
 
-    protected function ksortRecursive(array &$array): bool
+    /**
+     * Loads the active landing pages of the store view that use exactly the attributes of the group.
+     *
+     * @return Page[]
+     * @throws LocalizedException
+     */
+    protected function loadPages(): array
     {
-        foreach ($array as &$value) {
+        $group = $this->getGroup();
+        $pageCollection = $this->pageCollectionFactory->create();
+
+        for ($position = 1; $position <= AbstractLanding::ATTRIBUTE_COUNT; $position++) {
+            $attributeId = $group->getAttributeId($position);
+
+            $pageCollection->addFieldToFilter(
+                sprintf('main_table.attribute_id%d', $position),
+                $attributeId === null ? ['null' => true] : ['eq' => $attributeId]
+            );
+        }
+
+        $pageCollection->addActiveFilter();
+        $pageCollection->addStoreFilter($this->variables->intValue($this->storeHelper->getStore()->getId()));
+        $pageCollection->addOrder('main_table.headline', Collection::SORT_ORDER_ASC);
+
+        return array_values(
+            array_filter($pageCollection->getItems(), static fn(mixed $page): bool => $page instanceof Page)
+        );
+    }
+
+    /**
+     * Returns the labels of the values of the page by attribute, or null if a value is missing.
+     *
+     * @param Page $page
+     *
+     * @return string[]|null
+     * @throws Exception
+     */
+    protected function getGroupKeys(Page $page): ?array
+    {
+        $groupKeys = [];
+
+        for ($position = 1; $position <= AbstractLanding::ATTRIBUTE_COUNT; $position++) {
+            $attributeId = $page->getAttributeId($position);
+
+            if ($attributeId === null) {
+                break;
+            }
+
+            $value = $page->getValue($position);
+
+            if ($value === null || $value === []) {
+                return null;
+            }
+
+            $attribute = $this->eavAttributeHelper->getAttribute(Product::ENTITY, (string)$attributeId);
+
+            if (! $attribute->usesSource()) {
+                $groupKeys[] = is_array($value) ? implode(', ', $value) : $value;
+
+                continue;
+            }
+
+            $labels = [];
+
+            // pages of a collection have the option IDs as comma-separated text, loaded pages as a list
+            foreach (is_array($value) ? $value : explode(',', $value) as $optionId) {
+                $label = $attribute->getSource()->getOptionText($optionId);
+
+                if (is_string($label)) {
+                    $labels[] = $label;
+                }
+            }
+
+            if (count($labels) === 0) {
+                return null;
+            }
+
+            $groupKeys[] = implode(', ', $labels);
+        }
+
+        return $groupKeys;
+    }
+
+    /**
+     * Sorts the grouped pages naturally by their values, on all levels.
+     *
+     * @param array $groupedPages
+     *
+     * @phpstan-param array<int|string, mixed> $groupedPages
+     *
+     * @return void
+     */
+    protected function sortRecursive(array &$groupedPages): void
+    {
+        foreach ($groupedPages as &$value) {
             if (is_array($value)) {
-                $this->ksortRecursive($value);
+                $this->sortRecursive($value);
             }
         }
 
-        return ksort($array, SORT_NATURAL | SORT_FLAG_CASE);
+        unset($value);
+
+        ksort($groupedPages, SORT_NATURAL | SORT_FLAG_CASE);
     }
 
-    public function setGroupedPages(array $groupedPages)
+    /**
+     * Sets the grouped pages of a lower level.
+     *
+     * @param array $groupedPages
+     *
+     * @phpstan-param array<int|string, mixed> $groupedPages
+     *
+     * @return void
+     */
+    public function setGroupedPages(array $groupedPages): void
     {
         $this->groupedPages = $groupedPages;
     }
 
+    /**
+     * Checks whether the list contains pages (last level) instead of further groups.
+     *
+     * @param array $pages
+     *
+     * @phpstan-param array<int|string, mixed> $pages
+     *
+     * @return bool
+     */
     public function isPages(array $pages): bool
     {
-        $page = reset($pages);
-
-        return $page instanceof Page;
+        return reset($pages) instanceof Page;
     }
 
+    /**
+     * Returns the HTML of the pages of the last level.
+     *
+     * @return string
+     */
     public function getPagesHtml(): string
-    {
-        $pagesBlock = $this->loadPagesBlock();
-
-        if ($pagesBlock) {
-            $pagesBlock->setPages($this->getGroupedPages());
-
-            return $this->renderPagesHtml($pagesBlock);
-        } else {
-            return '';
-        }
-    }
-
-    public function loadPagesBlock(): ?Pages
     {
         try {
             $pagesBlock = $this->getLayout()->getBlock('landing_page.group.grouped.pages');
         } catch (LocalizedException $exception) {
-            return null;
+            $this->logging->error($exception);
+
+            return '';
         }
 
-        if ($pagesBlock instanceof Pages) {
-            return $pagesBlock;
+        if (! $pagesBlock instanceof Grouped\Pages) {
+            return '';
         }
 
-        return null;
-    }
+        $pagesBlock->setPages(
+            array_values(array_filter($this->getGroupedPages(), static fn(mixed $page): bool => $page instanceof Page))
+        );
 
-    public function renderPagesHtml(Pages $pagesBlock): string
-    {
         return $pagesBlock->toHtml();
     }
 
+    /**
+     * Returns the HTML of the groups of the next level.
+     *
+     * @param array $groupedPages
+     *
+     * @phpstan-param array<int|string, mixed> $groupedPages
+     *
+     * @return string
+     */
     public function getGroupedPagesHtml(array $groupedPages): string
     {
         try {
-            /** @var Grouped $groupedBlock */
-            $groupedBlock = $this->getLayout()->createBlock(get_class($this));
+            $groupedBlock = $this->getLayout()->createBlock(self::class);
         } catch (LocalizedException $exception) {
             $this->logging->error($exception);
 
+            return '';
+        }
+
+        if (! $groupedBlock instanceof self) {
             return '';
         }
 

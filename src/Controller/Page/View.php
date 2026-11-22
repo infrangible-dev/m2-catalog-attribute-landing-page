@@ -1,253 +1,127 @@
-<?php /** @noinspection PhpDeprecationInspection */
+<?php
 
 declare(strict_types=1);
 
+/**
+ * @author      Andreas Knollmann
+ * @copyright   Copyright (c) 2014-2026 Softwareentwicklung Andreas Knollmann
+ * @license     http://www.opensource.org/licenses/mit-license.php MIT
+ */
+
 namespace Infrangible\CatalogAttributeLandingPage\Controller\Page;
 
-use Exception;
 use FeWeDev\Base\Variables;
+use Infrangible\CatalogAttributeLandingPage\Controller\AbstractView;
 use Infrangible\CatalogAttributeLandingPage\Helper\Data;
-use Infrangible\CatalogAttributeLandingPage\Model\Layer\Category\FilterableAttributeList;
-use Infrangible\CatalogAttributeLandingPage\Model\PageFactory;
+use Infrangible\CatalogAttributeLandingPage\Model\PageFactory as LandingPageFactory;
+use Infrangible\CatalogAttributeLandingPage\Model\ResourceModel\PageFactory as LandingPageResourceFactory;
 use Infrangible\Core\Helper\Attribute;
 use Infrangible\Core\Helper\Registry;
+use Infrangible\Core\Helper\Stores;
 use Magento\Catalog\Model\Layer\Resolver;
-use Magento\Catalog\Model\Product;
-use Magento\Framework\App\Action\Action;
-use Magento\Framework\App\Action\Context;
+use Magento\Framework\App\RequestInterface;
+use Magento\Framework\Controller\Result\ForwardFactory;
 use Magento\Framework\Controller\ResultInterface;
+use Magento\Framework\View\Result\PageFactory;
 use Psr\Log\LoggerInterface;
 
 /**
- * @author      Andreas Knollmann
- * @copyright   2014-2024 Softwareentwicklung Andreas Knollmann
- * @license     http://www.opensource.org/licenses/mit-license.php MIT
+ * Shows a landing page: the products with the attribute values of the page in the layered navigation of the layer
+ * "landing_page".
  */
-class View extends Action
+class View extends AbstractView
 {
-    /** @var Registry */
-    protected $registryHelper;
-
-    /** @var Variables */
-    protected $variables;
-
-    /** @var Attribute */
-    protected $eavAttributeHelper;
-
-    /** @var Data */
-    protected $helper;
-
-    /** @var LoggerInterface */
-    protected $logging;
-
-    /** @var PageFactory */
-    protected $pageFactory;
-
-    /** @var \Infrangible\CatalogAttributeLandingPage\Model\ResourceModel\PageFactory */
-    protected $pageResourceFactory;
-
-    /** @var Resolver */
-    protected $layerResolver;
-
-    /** @var FilterableAttributeList */
-    protected $filterableAttributeList;
-
+    /**
+     * @param RequestInterface $request
+     * @param PageFactory $resultPageFactory
+     * @param ForwardFactory $resultForwardFactory
+     * @param Registry $registryHelper
+     * @param Attribute $eavAttributeHelper
+     * @param Stores $storeHelper
+     * @param Variables $variables
+     * @param LoggerInterface $logging
+     * @param Data $helper
+     * @param LandingPageFactory $pageFactory
+     * @param LandingPageResourceFactory $pageResourceFactory
+     * @param Resolver $layerResolver
+     */
     public function __construct(
-        Context $context,
+        RequestInterface $request,
+        PageFactory $resultPageFactory,
+        ForwardFactory $resultForwardFactory,
         Registry $registryHelper,
-        Variables $variables,
         Attribute $eavAttributeHelper,
-        Data $helper,
+        Stores $storeHelper,
+        Variables $variables,
         LoggerInterface $logging,
-        PageFactory $pageFactory,
-        \Infrangible\CatalogAttributeLandingPage\Model\ResourceModel\PageFactory $pageResourceFactory,
-        Resolver $layerResolver,
-        FilterableAttributeList $filterableAttributeList
+        protected Data $helper,
+        protected LandingPageFactory $pageFactory,
+        protected LandingPageResourceFactory $pageResourceFactory,
+        protected Resolver $layerResolver
     ) {
-        parent::__construct($context);
-
-        $this->registryHelper = $registryHelper;
-        $this->variables = $variables;
-        $this->eavAttributeHelper = $eavAttributeHelper;
-        $this->helper = $helper;
-        $this->logging = $logging;
-        $this->pageFactory = $pageFactory;
-        $this->pageResourceFactory = $pageResourceFactory;
-        $this->layerResolver = $layerResolver;
-        $this->filterableAttributeList = $filterableAttributeList;
+        parent::__construct(
+            $request,
+            $resultPageFactory,
+            $resultForwardFactory,
+            $registryHelper,
+            $eavAttributeHelper,
+            $storeHelper,
+            $variables,
+            $logging
+        );
     }
 
     /**
-     * @return ResultInterface|void
+     * Shows the landing page of the request parameter page_id.
+     *
+     * @return ResultInterface
      */
-    public function execute()
+    public function execute(): ResultInterface
     {
-        $pageId = $this->getRequest()->getParam('page_id');
-
-        if (! $pageId) {
-            $this->_forward('noRoute');
-
-            return;
-        }
-
         $page = $this->pageFactory->create();
 
         $this->pageResourceFactory->create()->load(
             $page,
-            $pageId
+            $this->variables->intValue($this->request->getParam('page_id'))
         );
 
-        if (! $page->getId()) {
-            $this->_forward('noRoute');
-
-            return;
+        if (! $this->isAvailable($page)) {
+            return $this->notFound();
         }
 
-        $this->registryHelper->register(
-            'current_page',
-            $page,
-            true
-        );
+        $attributeCodes = $this->getAttributeCodes($page);
 
-        $filterableAttributes = $this->filterableAttributeList->getList();
-
-        $attributeFilterCodes = [];
-        $attributeFilterValues = [];
-
-        for ($i = 1; $i <= 5; $i++) {
-            $attributeId = $page->getDataUsingMethod(
-                sprintf(
-                    'attribute_id%d',
-                    $i
-                )
-            );
-
-            if ($this->variables->isEmpty($attributeId)) {
-                continue;
-            }
-
-            try {
-                $attribute = $this->eavAttributeHelper->getAttribute(
-                    Product::ENTITY,
-                    $attributeId
-                );
-
-                $attributeCode = $attribute->getAttributeCode();
-
-                $isFilterableAttribute = false;
-
-                foreach ($filterableAttributes as $filterableAttribute) {
-                    if ($filterableAttribute->getAttributeCode() === $attributeCode) {
-                        $isFilterableAttribute = true;
-                        break;
-                    }
-                }
-
-                if (! $isFilterableAttribute) {
-                    throw new Exception(
-                        sprintf(
-                            'Use of non filterable attribute: %s',
-                            $attributeCode
-                        )
-                    );
-                }
-            } catch (Exception $exception) {
-                $this->logging->error($exception);
-
-                $this->_forward('noRoute');
-                return;
-            }
-
-            $attributeValue = $page->getDataUsingMethod(
-                sprintf(
-                    'value%d',
-                    $i
-                )
-            );
-
-            $this->helper->addValue(
-                $attributeCode,
-                $attributeValue
-            );
-
-            $attributeFilterCodes[] = $attributeCode;
-            $attributeFilterValues[] = is_array($attributeValue) ? implode(
-                '_',
-                $attributeValue
-            ) : $attributeValue;
+        if ($attributeCodes === null) {
+            return $this->notFound();
         }
 
-        $attributeSetId = $page->getDataUsingMethod('attribute_set_id');
+        $attributeValues = [];
 
-        if (! $this->variables->isEmpty($attributeSetId)) {
-            $this->helper->addValue(
-                'attribute_set_id',
-                $attributeSetId
-            );
+        foreach ($attributeCodes as $position => $attributeCode) {
+            $value = $page->getValue($position);
+
+            $this->helper->addValue($attributeCode, $value);
+
+            $attributeValues[] = is_array($value) ? implode('_', $value) : (string)$value;
         }
 
-        $this->registryHelper->register(
-            'attribute_filter',
-            $attributeFilterCodes,
-            true
-        );
+        $attributeSetId = $page->getAttributeSetId();
+
+        if ($attributeSetId !== null) {
+            $this->helper->addValue('attribute_set_id', $attributeSetId);
+        }
+
+        $this->registryHelper->register('current_page', $page, true);
+        $this->registryHelper->register('attribute_filter', array_values($attributeCodes), true);
 
         $this->layerResolver->create('landing_page');
 
-        $update = $this->_view->getLayout()->getUpdate();
+        $attributeCodesHandle = implode('_', $attributeCodes);
 
-        $update->addHandle('default');
-
-        $this->_view->addActionLayoutHandles();
-        $update->addHandle('infrangible_catalogattributelandingpage_page_view');
-        $update->addHandle(
-            sprintf(
-                'infrangible_catalogattributelandingpage_page_view_%s',
-                implode(
-                    '_',
-                    $attributeFilterCodes
-                )
-            )
+        return $this->createResultPage(
+            $page,
+            'infrangible_catalogattributelandingpage_page_view',
+            [$attributeCodesHandle, sprintf('%s_%s', $attributeCodesHandle, implode('_', $attributeValues))]
         );
-        $update->addHandle(
-            sprintf(
-                'infrangible_catalogattributelandingpage_page_view_%s_%s',
-                implode(
-                    '_',
-                    $attributeFilterCodes
-                ),
-                implode(
-                    '_',
-                    $attributeFilterValues
-                )
-            )
-        );
-        $update->addHandle(
-            sprintf(
-                'infrangible_catalogattributelandingpage_page_view_%d',
-                $page->getId()
-            )
-        );
-        $this->_view->loadLayoutUpdates();
-
-        $this->_view->generateLayoutXml()->generateLayoutBlocks();
-
-        $pageConfig = $this->_view->getPage()->getConfig();
-
-        $pageConfig->getTitle()->set(
-            $this->variables->isEmpty($page->getPageTitle()) ? $page->getHeadline() : $page->getPageTitle()
-        );
-
-        if (! $this->variables->isEmpty($page->getMetaDescription())) {
-            $pageConfig->setDescription($page->getMetaDescription());
-        } elseif (! $this->variables->isEmpty($page->getDescription())) {
-            $pageConfig->setDescription($page->getDescription());
-        }
-
-        if (! $this->variables->isEmpty($page->getMetaKeywords())) {
-            $pageConfig->setKeywords($page->getMetaKeywords());
-        }
-
-        return $this->_view->getPage();
     }
 }

@@ -2,29 +2,43 @@
 
 declare(strict_types=1);
 
+/**
+ * @author      Andreas Knollmann
+ * @copyright   Copyright (c) 2014-2026 Softwareentwicklung Andreas Knollmann
+ * @license     http://www.opensource.org/licenses/mit-license.php MIT
+ */
+
 namespace Infrangible\CatalogAttributeLandingPage\Block\Adminhtml\Group;
 
 use Exception;
 use Magento\Framework\Data\Collection\AbstractDb;
 
 /**
- * @author      Andreas Knollmann
- * @copyright   2014-2024 Softwareentwicklung Andreas Knollmann
- * @license     http://www.opensource.org/licenses/mit-license.php MIT
+ * Grid of the landing groups.
  */
-class Grid
-    extends \Infrangible\BackendWidget\Block\Grid
+class Grid extends \Infrangible\BackendWidget\Block\Grid
 {
+    /**
+     * Prepares the collection.
+     *
+     * @param AbstractDb $collection
+     *
+     * @return void
+     */
+    // phpcs:ignore Magento2.CodeAnalysis.EmptyBlock -- the grid shows all objects
     protected function prepareCollection(AbstractDb $collection): void
     {
     }
 
     /**
+     * Prepares the fields.
+     *
+     * @return void
      * @throws Exception
      */
     protected function prepareFields(): void
     {
-        $this->addTextColumn('url_key', __('Url Key')->render());
+        $this->addTextColumn('url_key', __('URL Key')->render());
         $this->addTextColumn('headline', __('Headline')->render());
         $this->addEavAttributeColumn('attribute_id1', __('Attribute #1')->render());
         $this->addEavAttributeColumn('attribute_id2', __('Attribute #2')->render());
@@ -38,6 +52,8 @@ class Grid
     }
 
     /**
+     * Returns the hidden field names.
+     *
      * @return string[]
      */
     protected function getHiddenFieldNames(): array

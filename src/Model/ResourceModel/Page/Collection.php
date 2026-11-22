@@ -2,116 +2,40 @@
 
 declare(strict_types=1);
 
+/**
+ * @author      Andreas Knollmann
+ * @copyright   Copyright (c) 2014-2026 Softwareentwicklung Andreas Knollmann
+ * @license     http://www.opensource.org/licenses/mit-license.php MIT
+ */
+
 namespace Infrangible\CatalogAttributeLandingPage\Model\ResourceModel\Page;
 
 use Infrangible\CatalogAttributeLandingPage\Model\Page;
-use Magento\Framework\DB\Select;
-use Magento\Framework\Model\AbstractModel;
-use Magento\Framework\Model\ResourceModel\Db\Collection\AbstractCollection;
-use Magento\Store\Model\Store;
-use Zend_Db_Expr;
-use Zend_Db_Select;
+use Infrangible\CatalogAttributeLandingPage\Model\ResourceModel\AbstractLandingCollection;
+use Infrangible\CatalogAttributeLandingPage\Model\ResourceModel\Page as PageResource;
 
 /**
- * @author      Andreas Knollmann
- * @copyright   2014-2025 Softwareentwicklung Andreas Knollmann
- * @license     http://www.opensource.org/licenses/mit-license.php MIT
+ * Collection of landing pages.
  */
-class Collection extends AbstractCollection
+class Collection extends AbstractLandingCollection
 {
+    /**
+     * Sets the model and the resource model.
+     *
+     * @return void
+     */
     protected function _construct(): void
     {
-        $this->_init(
-            Page::class,
-            \Infrangible\CatalogAttributeLandingPage\Model\ResourceModel\Page::class
-        );
-    }
-
-    protected function _initSelect(): AbstractCollection
-    {
-        parent::_initSelect();
-
-        $this->getSelect()->join(
-            ['page_store' => $this->getTable('catalog_attribute_landing_page_store')],
-            'main_table.page_id = page_store.page_id',
-            ['store_ids' => 'GROUP_CONCAT(page_store.store_id)']
-        );
-        $this->getSelect()->group('main_table.page_id');
-
-        return $this;
-    }
-
-    public function getSelectCountSql(): Select
-    {
-        $innerSelect = clone parent::getSelectCountSql();
-
-        $innerSelect->reset(Zend_Db_Select::COLUMNS);
-        $innerSelect->columns(new Zend_Db_Expr('DISTINCT main_table.page_id'));
-
-        $countSelect = $this->getConnection()->select();
-
-        $countSelect->from(
-            new Zend_Db_Expr(
-                sprintf(
-                    '(%s)',
-                    $innerSelect->assemble()
-                )
-            ),
-            ['COUNT(*)']
-        );
-
-        return $countSelect;
+        $this->_init(Page::class, PageResource::class);
     }
 
     /**
-     * @param int|Store $store
+     * Returns the name of the table with the store views.
+     *
+     * @return string
      */
-    public function addStoreFilter($store, bool $withAdmin = true): AbstractCollection
+    protected function getStoreTableName(): string
     {
-        $storeIds = $store instanceof Store ? [$store->getId()] : [$store];
-
-        if ($withAdmin) {
-            $storeIds[] = 0;
-        }
-
-        $this->addFieldToFilter(
-            'page_store.store_id',
-            ['in' => $storeIds]
-        );
-
-        return $this;
-    }
-
-    public function addActiveFilter()
-    {
-        $this->addFieldToFilter(
-            'active',
-            ['eq' => 1]
-        );
-    }
-
-    protected function _afterLoad(): AbstractCollection
-    {
-        parent::_afterLoad();
-
-        /** @var AbstractModel $item */
-        foreach ($this->_items as $item) {
-            $item->setOrigData(
-                'store_ids',
-                explode(
-                    ',',
-                    $item->getData('store_ids')
-                )
-            );
-            $item->setData(
-                'store_ids',
-                explode(
-                    ',',
-                    $item->getData('store_ids')
-                )
-            );
-        }
-
-        return $this;
+        return 'catalog_attribute_landing_page_store';
     }
 }

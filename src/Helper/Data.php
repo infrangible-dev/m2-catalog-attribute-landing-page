@@ -2,74 +2,142 @@
 
 declare(strict_types=1);
 
-namespace Infrangible\CatalogAttributeLandingPage\Helper;
-
-use Infrangible\CatalogAttributeLandingPage\Model\Page;
-use Magento\Framework\App\Request\Http;
-use Magento\Framework\App\RequestInterface;
-use Infrangible\CatalogAttributeLandingPage\Model\Group;
-use Infrangible\CatalogAttributeLandingPage\Model\ResourceModel;
-
 /**
  * @author      Andreas Knollmann
- * @copyright   2014-2024 Softwareentwicklung Andreas Knollmann
+ * @copyright   Copyright (c) 2014-2026 Softwareentwicklung Andreas Knollmann
  * @license     http://www.opensource.org/licenses/mit-license.php MIT
+ */
+
+namespace Infrangible\CatalogAttributeLandingPage\Helper;
+
+use FeWeDev\Base\Variables;
+use Infrangible\CatalogAttributeLandingPage\Model\Group;
+use Infrangible\CatalogAttributeLandingPage\Model\Page;
+use Infrangible\CatalogAttributeLandingPage\Model\ResourceModel\AbstractLandingCollection;
+use Infrangible\CatalogAttributeLandingPage\Model\ResourceModel\Group\CollectionFactory as GroupCollectionFactory;
+use Infrangible\CatalogAttributeLandingPage\Model\ResourceModel\Page\CollectionFactory as PageCollectionFactory;
+use Magento\Framework\App\RequestInterface;
+
+/**
+ * Loads landing pages and groups by their URL key, and passes the attribute values of a page to the layered
+ * navigation.
  */
 class Data
 {
-    /** @var Http */
-    protected $request;
-
-    /** @var ResourceModel\Page\CollectionFactory */
-    protected $pageCollectionFactory;
-
-    /** @var ResourceModel\Group\CollectionFactory */
-    protected $groupCollectionFactory;
-
+    /**
+     * @param RequestInterface $request
+     * @param PageCollectionFactory $pageCollectionFactory
+     * @param GroupCollectionFactory $groupCollectionFactory
+     * @param Variables $variables
+     */
     public function __construct(
-        RequestInterface $request,
-        ResourceModel\Page\CollectionFactory $pageCollectionFactory,
-        ResourceModel\Group\CollectionFactory $groupCollectionFactory)
-    {
-        $this->request = $request;
-        $this->pageCollectionFactory = $pageCollectionFactory;
-        $this->groupCollectionFactory = $groupCollectionFactory;
+        protected RequestInterface $request,
+        protected PageCollectionFactory $pageCollectionFactory,
+        protected GroupCollectionFactory $groupCollectionFactory,
+        protected Variables $variables
+    ) {
     }
 
-    public function addValue(string $attributeCode, $attributeValue)
+    /**
+     * Sets the value of the attribute as request parameter, which the filters of the layered navigation apply.
+     *
+     * @param string $attributeCode
+     * @param mixed $attributeValue
+     *
+     * @return void
+     */
+    public function addValue(string $attributeCode, mixed $attributeValue): void
     {
-        $this->request->setParam($attributeCode, $attributeValue);
+        $this->request->setParams([$attributeCode => $attributeValue]);
     }
 
+    /**
+     * Returns the active landing page with the URL key in the store view, or null if there is none.
+     *
+     * @param string $urlKey
+     * @param int $storeId
+     *
+     * @return Page|null
+     */
     public function loadPage(string $urlKey, int $storeId): ?Page
     {
-        $pageCollection = $this->pageCollectionFactory->create();
+        $page = $this->loadByUrlKey($this->pageCollectionFactory->create(), $urlKey, $storeId, true);
 
-        $pageCollection->addFieldToFilter('url_key', ['eq' => $urlKey]);
-        $pageCollection->addFieldToFilter('active', ['eq' => 1]);
-        $pageCollection->addStoreFilter($storeId);
-
-        $pageCollection->load();
-
-        /** @var Page $page */
-        $page = $pageCollection->getFirstItem();
-
-        return $page;
+        return $page instanceof Page ? $page : null;
     }
 
+    /**
+     * Returns the active landing group with the URL key in the store view, or null if there is none.
+     *
+     * @param string $urlKey
+     * @param int $storeId
+     *
+     * @return Group|null
+     */
     public function loadGroup(string $urlKey, int $storeId): ?Group
     {
-        $groupCollection = $this->groupCollectionFactory->create();
+        $group = $this->loadByUrlKey($this->groupCollectionFactory->create(), $urlKey, $storeId, true);
 
-        $groupCollection->addFieldToFilter('url_key', ['eq' => $urlKey]);
-        $groupCollection->addFieldToFilter('active', ['eq' => 1]);
-        $groupCollection->addStoreFilter($storeId);
+        return $group instanceof Group ? $group : null;
+    }
 
-        $groupCollection->load();
+    /**
+     * Returns the ID of a landing page with the URL key in the store view, also an inactive one, or null.
+     *
+     * @param string $urlKey
+     * @param int $storeId
+     *
+     * @return int|null
+     */
+    public function getPageIdByUrlKey(string $urlKey, int $storeId): ?int
+    {
+        $object = $this->loadByUrlKey($this->pageCollectionFactory->create(), $urlKey, $storeId, false);
 
-        /** @var Group $group */
-        $group = $groupCollection->getFirstItem();
+        return $object === null ? null : $this->variables->intValue($object->getId());
+    }
 
-        return $group;
+    /**
+     * Returns the ID of a landing group with the URL key in the store view, also an inactive one, or null.
+     *
+     * @param string $urlKey
+     * @param int $storeId
+     *
+     * @return int|null
+     */
+    public function getGroupIdByUrlKey(string $urlKey, int $storeId): ?int
+    {
+        $object = $this->loadByUrlKey($this->groupCollectionFactory->create(), $urlKey, $storeId, false);
+
+        return $object === null ? null : $this->variables->intValue($object->getId());
+    }
+
+    /**
+     * Returns the first object of the collection with the URL key in the store view (or all store views).
+     *
+     * @param AbstractLandingCollection $collection
+     * @param string $urlKey
+     * @param int $storeId
+     * @param bool $activeOnly
+     *
+     * @return Page|Group|null
+     */
+    protected function loadByUrlKey(
+        AbstractLandingCollection $collection,
+        string $urlKey,
+        int $storeId,
+        bool $activeOnly
+    ): Page|Group|null {
+        $collection->addFieldToFilter('url_key', ['eq' => $urlKey]);
+        $collection->addStoreFilter($storeId);
+
+        if ($activeOnly) {
+            $collection->addActiveFilter();
+        }
+
+        $collection->setPageSize(1);
+
+        $object = $collection->getFirstItem();
+
+        return ($object instanceof Page || $object instanceof Group) && $object->getId() ? $object : null;
     }
 }

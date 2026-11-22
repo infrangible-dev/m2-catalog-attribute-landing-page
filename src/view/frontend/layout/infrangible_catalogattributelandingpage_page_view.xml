@@ -2,7 +2,7 @@
 
 <!--
  * @author      Andreas Knollmann
- * @copyright   Copyright (c) 2014-2024 Softwareentwicklung Andreas Knollmann
+ * @copyright   Copyright (c) 2014-2026 Softwareentwicklung Andreas Knollmann
  * @license     http://www.opensource.org/licenses/mit-license.php MIT
 -->
 <page xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" layout="2columns-left" xsi:noNamespaceSchemaLocation="urn:magento:framework:View/Layout/etc/page_configuration.xsd">
@@ -11,7 +11,7 @@
         <attribute name="class" value="page-products"/>
         <referenceContainer name="sidebar.main">
             <block class="Infrangible\CatalogAttributeLandingPage\Block\Navigation" name="catalog.leftnav" before="-" template="Magento_LayeredNavigation::layer/view.phtml">
-                <block class="Infrangible\CatalogAttributeLandingPage\Block\Navigation\State" name="catalog.navigation.state" as="state"/>
+                <block class="Magento\LayeredNavigation\Block\Navigation\State" name="catalog.navigation.state" as="state"/>
                 <block class="Magento\LayeredNavigation\Block\Navigation\FilterRenderer" name="catalog.navigation.renderer" as="renderer" template="Magento_LayeredNavigation::layer/filter.phtml">
                     <arguments>
                         <argument name="product_layer_view_model" xsi:type="object">Magento\LayeredNavigation\ViewModel\Layer\Filter</argument>
@@ -20,10 +20,19 @@
             </block>
         </referenceContainer>
         <referenceContainer name="columns.top">
+            <block class="Infrangible\CatalogAttributeLandingPage\Block\Page" name="landing_page.image.headline" template="Infrangible_CatalogAttributeLandingPage::page/image.phtml" before="page.main.title">
+                <arguments>
+                    <argument name="image_position" xsi:type="string">headline</argument>
+                </arguments>
+            </block>
             <container name="landing_page.view.container" htmlTag="div" htmlClass="category-view" after="-">
                 <block class="Infrangible\CatalogAttributeLandingPage\Block\Page" name="landing_page.description" template="Infrangible_CatalogAttributeLandingPage::page/description.phtml"/>
                 <block class="Infrangible\CatalogAttributeLandingPage\Block\Page" name="landing_page.cms" template="Infrangible_CatalogAttributeLandingPage::page/cms.phtml"/>
-                <block class="Infrangible\CatalogAttributeLandingPage\Block\Page" name="landing_page.image" template="Infrangible_CatalogAttributeLandingPage::page/image.phtml"/>
+                <block class="Infrangible\CatalogAttributeLandingPage\Block\Page" name="landing_page.image" template="Infrangible_CatalogAttributeLandingPage::page/image.phtml">
+                    <arguments>
+                        <argument name="image_position" xsi:type="string">product_list</argument>
+                    </arguments>
+                </block>
             </container>
         </referenceContainer>
         <referenceContainer name="content">
@@ -40,7 +49,7 @@
                     <block class="Magento\Catalog\Block\Product\ProductList\Item\Container" name="category.product.addto" as="addto">
                         <block class="Magento\Catalog\Block\Product\ProductList\Item\AddTo\Compare" name="category.product.addto.compare" as="compare" template="Magento_Catalog::product/list/addto/compare.phtml"/>
                     </block>
-                    <block class="Infrangible\CatalogAttributeLandingPage\Block\Product\ProductList\Toolbar" name="product_list_toolbar" template="Magento_Catalog::product/list/toolbar.phtml">
+                    <block class="Magento\Catalog\Block\Product\ProductList\Toolbar" name="product_list_toolbar" template="Magento_Catalog::product/list/toolbar.phtml">
                         <block class="Magento\Theme\Block\Html\Pager" name="product_list_toolbar_pager"/>
                     </block>
                     <action method="setToolbarBlockName">

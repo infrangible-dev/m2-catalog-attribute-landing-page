@@ -1,0 +1,115 @@
+{
+    "catalog_attribute_landing_page": {
+        "column": {
+            "page_id": true,
+            "attribute_id1": true,
+            "value1": true,
+            "attribute_id2": true,
+            "value2": true,
+            "attribute_id3": true,
+            "value3": true,
+            "attribute_id4": true,
+            "value4": true,
+            "attribute_id5": true,
+            "value5": true,
+            "attribute_set_id": true,
+            "attribute_orders": true,
+            "attribute_order": true,
+            "attribute_order_direction": true,
+            "url_key": true,
+            "headline": true,
+            "description": true,
+            "cms_block_id": true,
+            "additional_cms_block_id": true,
+            "seo_cms_block_id": true,
+            "image": true,
+            "logo": true,
+            "thumbnail": true,
+            "page_title": true,
+            "meta_description": true,
+            "meta_keywords": true,
+            "check_active": true,
+            "active": true,
+            "created_at": true,
+            "updated_at": true
+        },
+        "index": {
+            "CATALOG_ATTRIBUTE_LANDING_PAGE_ATTRIBUTE_ID1": true,
+            "CATALOG_ATTRIBUTE_LANDING_PAGE_ATTRIBUTE_ID2": true,
+            "CATALOG_ATTRIBUTE_LANDING_PAGE_ATTRIBUTE_ID3": true,
+            "CATALOG_ATTRIBUTE_LANDING_PAGE_ATTRIBUTE_ID4": true,
+            "CATALOG_ATTRIBUTE_LANDING_PAGE_ATTRIBUTE_ID5": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "CAT_ATTR_LANDING_PAGE_ATTR_ID1_EAV_ATTR_ATTR_ID": true,
+            "CAT_ATTR_LANDING_PAGE_ATTR_ID2_EAV_ATTR_ATTR_ID": true,
+            "CAT_ATTR_LANDING_PAGE_ATTR_ID3_EAV_ATTR_ATTR_ID": true,
+            "CAT_ATTR_LANDING_PAGE_ATTR_ID4_EAV_ATTR_ATTR_ID": true,
+            "CAT_ATTR_LANDING_PAGE_ATTR_ID5_EAV_ATTR_ATTR_ID": true
+        }
+    },
+    "catalog_attribute_landing_page_store": {
+        "column": {
+            "page_id": true,
+            "store_id": true
+        },
+        "index": {
+            "CATALOG_ATTRIBUTE_LANDING_PAGE_STORE_STORE_ID": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "FK_CD649135B86736D4B063F21B2CBB1624": true,
+            "CATALOG_ATTRIBUTE_LANDING_PAGE_STORE_STORE_ID_STORE_STORE_ID": true
+        }
+    },
+    "catalog_attribute_landing_group": {
+        "column": {
+            "group_id": true,
+            "attribute_id1": true,
+            "attribute_id2": true,
+            "attribute_id3": true,
+            "attribute_id4": true,
+            "attribute_id5": true,
+            "url_key": true,
+            "headline": true,
+            "description": true,
+            "cms_block_id": true,
+            "page_title": true,
+            "meta_description": true,
+            "meta_keywords": true,
+            "active": true,
+            "created_at": true,
+            "updated_at": true
+        },
+        "index": {
+            "CATALOG_ATTRIBUTE_LANDING_GROUP_ATTRIBUTE_ID1": true,
+            "CATALOG_ATTRIBUTE_LANDING_GROUP_ATTRIBUTE_ID2": true,
+            "CATALOG_ATTRIBUTE_LANDING_GROUP_ATTRIBUTE_ID3": true,
+            "CATALOG_ATTRIBUTE_LANDING_GROUP_ATTRIBUTE_ID4": true,
+            "CATALOG_ATTRIBUTE_LANDING_GROUP_ATTRIBUTE_ID5": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "CAT_ATTR_LANDING_GROUP_ATTR_ID1_EAV_ATTR_ATTR_ID": true,
+            "CAT_ATTR_LANDING_GROUP_ATTR_ID2_EAV_ATTR_ATTR_ID": true,
+            "CAT_ATTR_LANDING_GROUP_ATTR_ID3_EAV_ATTR_ATTR_ID": true,
+            "CAT_ATTR_LANDING_GROUP_ATTR_ID4_EAV_ATTR_ATTR_ID": true,
+            "CAT_ATTR_LANDING_GROUP_ATTR_ID5_EAV_ATTR_ATTR_ID": true
+        }
+    },
+    "catalog_attribute_landing_group_store": {
+        "column": {
+            "group_id": true,
+            "store_id": true
+        },
+        "index": {
+            "CATALOG_ATTRIBUTE_LANDING_GROUP_STORE_STORE_ID": true
+        },
+        "constraint": {
+            "PRIMARY": true,
+            "FK_E6E6515090F38BCFD58A0EF66E9ACCBF": true,
+            "CATALOG_ATTRIBUTE_LANDING_GROUP_STORE_STORE_ID_STORE_STORE_ID": true
+        }
+    }
+}

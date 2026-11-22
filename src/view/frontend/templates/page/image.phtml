@@ -4,17 +4,23 @@ declare(strict_types=1);
 
 /**
  * @author      Andreas Knollmann
- * @copyright   Copyright (c) 2014-2024 Softwareentwicklung Andreas Knollmann
+ * @copyright   Copyright (c) 2014-2026 Softwareentwicklung Andreas Knollmann
  * @license     http://www.opensource.org/licenses/mit-license.php MIT
  */
 
 use Infrangible\CatalogAttributeLandingPage\Block\Page;
+use Magento\Framework\Escaper;
 
 /** @var Page $block */
-$image = $block->getPage()->getImage();
-$imagePosition = $block->getImagePosition();
-?>
+/** @var Escaper $escaper */
 
-<?php if ($image && $imagePosition === 'product_list'): ?>
-    <div class="category-image"><img src="<?php echo $block->getPage()->getImageUrl(); ?>" alt="<?php echo $block->getHeadline(); ?>" title="<?php echo $block->getHeadline(); ?>" class="image"/></div>
+// the position of this block (layout argument image_position), the image is shown at the configured position
+$imagePosition = $block->getData('image_position');
+$imageUrl = is_string($imagePosition) ? $block->getImageUrlAt($imagePosition) : null;
+?>
+<?php if ($imageUrl !== null): ?>
+    <div class="category-image">
+        <img src="<?= $escaper->escapeUrl($imageUrl) ?>" alt="<?= $escaper->escapeHtmlAttr($block->getHeadline()) ?>"
+             title="<?= $escaper->escapeHtmlAttr($block->getHeadline()) ?>" class="image"/>
+    </div>
 <?php endif; ?>

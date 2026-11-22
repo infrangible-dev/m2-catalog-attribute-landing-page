@@ -2,47 +2,48 @@
 
 declare(strict_types=1);
 
+/**
+ * @author      Andreas Knollmann
+ * @copyright   Copyright (c) 2014-2026 Softwareentwicklung Andreas Knollmann
+ * @license     http://www.opensource.org/licenses/mit-license.php MIT
+ */
+
 namespace Infrangible\CatalogAttributeLandingPage\Model\Search;
 
-use Magento\Catalog\Api\Data\EavAttributeInterface;
 use Magento\Framework\Config\ReaderInterface;
 
 /**
- * @author      Andreas Knollmann
- * @copyright   2014-2024 Softwareentwicklung Andreas Knollmann
- * @license     http://www.opensource.org/licenses/mit-license.php MIT
+ * Adds the generated filters of the filterable attributes to the search request of the landing pages.
  */
 class ReaderPlugin
 {
-    /** @var RequestGenerator */
-    protected $requestGenerator;
+    /** Name of the search request of the landing pages. */
+    public const CONTAINER = 'landing_page_container';
 
-    public function __construct(RequestGenerator $requestGenerator)
+    /**
+     * @param RequestGenerator $requestGenerator
+     */
+    public function __construct(protected RequestGenerator $requestGenerator)
     {
-        $this->requestGenerator = $requestGenerator;
     }
 
     /**
-     * Merge reader's value with generated
+     * Merges the generated request of the landing pages into the search requests of search_request.xml.
      *
      * @param ReaderInterface $subject
-     * @param array           $result
-     * @param string|null     $scope
+     * @param array $result
+     * @param string|null $scope
      *
-     * @return array
+     * @phpstan-param array<string, mixed> $result
+     *
+     * @return array<string, mixed>
      * @noinspection PhpUnusedParameterInspection
      */
-    public function afterRead(
-        ReaderInterface $subject,
-        array $result,
-        string $scope = null): array
+    public function afterRead(ReaderInterface $subject, array $result, ?string $scope = null): array
     {
-        $container = [];
-
-        $container[ 'landing_page_container' ] =
-            $this->requestGenerator->generateRequest(EavAttributeInterface::IS_FILTERABLE, 'landing_page_container',
-                false);
-
-        return array_merge_recursive($result, $container);
+        return array_merge_recursive(
+            $result,
+            [self::CONTAINER => $this->requestGenerator->generateRequest(self::CONTAINER)]
+        );
     }
 }

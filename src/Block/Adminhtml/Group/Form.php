@@ -2,115 +2,45 @@
 
 declare(strict_types=1);
 
-namespace Infrangible\CatalogAttributeLandingPage\Block\Adminhtml\Group;
-
-use Exception;
-
 /**
  * @author      Andreas Knollmann
- * @copyright   2014-2024 Softwareentwicklung Andreas Knollmann
+ * @copyright   Copyright (c) 2014-2026 Softwareentwicklung Andreas Knollmann
  * @license     http://www.opensource.org/licenses/mit-license.php MIT
  */
-class Form extends \Infrangible\BackendWidget\Block\Form
+
+namespace Infrangible\CatalogAttributeLandingPage\Block\Adminhtml\Group;
+
+use Infrangible\CatalogAttributeLandingPage\Block\Adminhtml\AbstractForm;
+use Infrangible\CatalogAttributeLandingPage\Model\AbstractLanding;
+
+/**
+ * Form of a landing group: URL key, texts, attributes, store views and SEO.
+ */
+class Form extends AbstractForm
 {
     /**
-     * @throws Exception
+     * Adds the fields of the landing group.
+     *
+     * @param \Magento\Framework\Data\Form $form
+     *
+     * @return void
      */
-    protected function prepareFields(\Magento\Framework\Data\Form $form)
+    protected function prepareFields(\Magento\Framework\Data\Form $form): void
     {
-        $fieldSet = $form->addFieldset(
-            'general',
-            ['legend' => __('General')]
-        );
+        $this->addGeneralFieldset($form);
 
-        $this->addTextField(
-            $fieldSet,
-            'url_key',
-            __('Url Key')->render(),
-            true
-        );
-        $this->addTextField(
-            $fieldSet,
-            'headline',
-            __('Headline')->render(),
-            true
-        );
-        $this->addTextareaField(
-            $fieldSet,
-            'description',
-            __('Description')->render()
-        );
-        $this->addCmsBlockSelectField(
-            $fieldSet,
-            'cms_block_id'
-        );
+        $fieldSet = $form->addFieldset('attribute', ['legend' => __('Attribute')]);
 
-        $fieldSet = $form->addFieldset(
-            'attribute',
-            ['legend' => __('Attribute')]
-        );
+        for ($position = 1; $position <= AbstractLanding::ATTRIBUTE_COUNT; $position++) {
+            $this->addEavAttributeProductFilterableField(
+                $fieldSet,
+                sprintf('attribute_id%d', $position),
+                __('Attribute #%1', $position)->render(),
+                $position === 1
+            );
+        }
 
-        $this->addEavAttributeProductFilterableField(
-            $fieldSet,
-            'attribute_id1',
-            __('Attribute #1')->render(),
-            true
-        );
-        $this->addEavAttributeProductFilterableField(
-            $fieldSet,
-            'attribute_id2',
-            __('Attribute #2')->render()
-        );
-        $this->addEavAttributeProductFilterableField(
-            $fieldSet,
-            'attribute_id3',
-            __('Attribute #3')->render()
-        );
-        $this->addEavAttributeProductFilterableField(
-            $fieldSet,
-            'attribute_id4',
-            __('Attribute #4')->render()
-        );
-        $this->addEavAttributeProductFilterableField(
-            $fieldSet,
-            'attribute_id5',
-            __('Attribute #5')->render()
-        );
-
-        $fieldSet = $form->addFieldset(
-            'availability',
-            ['legend' => __('Availability')]
-        );
-
-        $this->addStoreMultiselectField(
-            $fieldSet,
-            'store_ids'
-        );
-        $this->addYesNoField(
-            $fieldSet,
-            'active',
-            __('Active')->render()
-        );
-
-        $fieldSet = $form->addFieldset(
-            'seo',
-            ['legend' => __('SEO')]
-        );
-
-        $this->addTextField(
-            $fieldSet,
-            'page_title',
-            __('Page Title')->render()
-        );
-        $this->addTextareaField(
-            $fieldSet,
-            'meta_description',
-            __('Meta Description')->render()
-        );
-        $this->addTextareaField(
-            $fieldSet,
-            'meta_keywords',
-            __('Meta Keywords')->render()
-        );
+        $this->addAvailabilityFieldset($form);
+        $this->addSeoFieldset($form);
     }
 }

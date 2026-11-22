@@ -1,126 +1,69 @@
-<?php /** @noinspection PhpDeprecationInspection */
+<?php
 
 declare(strict_types=1);
 
+/**
+ * @author      Andreas Knollmann
+ * @copyright   Copyright (c) 2014-2026 Softwareentwicklung Andreas Knollmann
+ * @license     http://www.opensource.org/licenses/mit-license.php MIT
+ */
+
 namespace Infrangible\CatalogAttributeLandingPage\Block;
 
+use Infrangible\CatalogAttributeLandingPage\Model\Group as LandingGroup;
 use Infrangible\CatalogAttributeLandingPage\Model\GroupFactory;
 use Infrangible\Core\Helper\Registry;
-use Magento\Cms\Block\Block;
-use Magento\Framework\Exception\LocalizedException;
 use Magento\Framework\View\Element\Template;
-use Magento\Theme\Block\Html\Breadcrumbs;
 use Psr\Log\LoggerInterface;
 
 /**
- * @author      Andreas Knollmann
- * @copyright   Copyright (c) 2014-2024 Softwareentwicklung Andreas Knollmann
- * @license     http://www.opensource.org/licenses/mit-license.php MIT
+ * Shows the current landing group: its description, CMS block and the grouped landing pages.
  */
-class Group
-    extends Template
+class Group extends AbstractLanding
 {
-    /** @var Registry */
-    protected $registryHelper;
+    /** @var LandingGroup|null */
+    private ?LandingGroup $group = null;
 
-    /** @var LoggerInterface */
-    protected $logging;
-
-    /** @var GroupFactory */
-    protected $groupFactory;
-
-    /** @var \Infrangible\CatalogAttributeLandingPage\Model\Group */
-    private $group;
-
+    /**
+     * @param Template\Context $context
+     * @param Registry $registryHelper
+     * @param LoggerInterface $logging
+     * @param GroupFactory $groupFactory
+     * @param array $data
+     *
+     * @phpstan-param array<string, mixed> $data
+     */
     public function __construct(
         Template\Context $context,
         Registry $registryHelper,
         LoggerInterface $logging,
-        GroupFactory $groupFactory,
-        array $data = [])
-    {
-        parent::__construct($context, $data);
-
-        $this->registryHelper = $registryHelper;
-        $this->logging = $logging;
-        $this->groupFactory = $groupFactory;
+        protected GroupFactory $groupFactory,
+        array $data = []
+    ) {
+        parent::__construct($context, $registryHelper, $logging, $data);
     }
 
     /**
-     * @throws LocalizedException
+     * Returns the current landing group, or an empty one outside of a landing group.
+     *
+     * @return LandingGroup
      */
-    protected function _prepareLayout(): Group
-    {
-        parent::_prepareLayout();
-
-        $breadcrumbsBlock = $this->getLayout()->getBlock('breadcrumbs');
-
-        if ($breadcrumbsBlock instanceof Breadcrumbs) {
-            $group = $this->getGroup();
-
-            $breadcrumbsBlock->addCrumb('home', [
-                'label' => __('Home'),
-                'title' => __('Go to Home Page'),
-                'link' => $this->_storeManager->getStore()->getBaseUrl()]);
-
-            $breadcrumbsBlock->addCrumb(
-                'landing_page_group', ['label' => $group->getHeadline(), 'title' => $group->getHeadline()]);
-        }
-
-        return $this;
-    }
-
-    public function getGroup(): \Infrangible\CatalogAttributeLandingPage\Model\Group
+    public function getLandingObject(): LandingGroup
     {
         if ($this->group === null) {
-            $this->group = $this->registryHelper->registry('current_group');
+            $group = $this->registryHelper->registry('current_group');
 
-            if (!$this->group || !$this->group->getId()) {
-                $this->group = $this->groupFactory->create();
-            }
+            $this->group = $group instanceof LandingGroup ? $group : $this->groupFactory->create();
         }
 
         return $this->group;
     }
 
-    public function getHeadline(): string
-    {
-        return $this->escapeHtml($this->getGroup()->getHeadline());
-    }
-
-    public function getDescription(): string
-    {
-        return $this->getGroup()->getDescription();
-    }
-
-    public function getCmsBlockHtml(): string
-    {
-        if (!$this->getData('cms_block_html')) {
-            try {
-                $layout = $this->getLayout();
-
-                /** @var Block $cmsBlock */
-                $cmsBlock = $layout->createBlock(Block::class);
-
-                $blockId = $this->getGroup()->getCmsBlockId();
-
-                if ($blockId) {
-                    $cmsBlock->setData('block_id', $blockId);
-
-                    $html = $cmsBlock->toHtml();
-                } else {
-                    $html = '';
-                }
-
-                $this->setData('cms_block_html', $html);
-            } catch (LocalizedException $exception) {
-                $this->logging->error($exception);
-            }
-        }
-
-        return $this->getData('cms_block_html');
-    }
-
+    /**
+     * Returns the HTML of the grouped landing pages.
+     *
+     * @return string
+     */
     public function getGroupedPagesHtml(): string
     {
         return $this->getChildHtml('landing_page.group.grouped');

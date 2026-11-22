@@ -2,31 +2,27 @@
 
 declare(strict_types=1);
 
+/**
+ * @author      Andreas Knollmann
+ * @copyright   Copyright (c) 2014-2026 Softwareentwicklung Andreas Knollmann
+ * @license     http://www.opensource.org/licenses/mit-license.php MIT
+ */
+
 namespace Infrangible\CatalogAttributeLandingPage\Model\ResourceModel;
 
 use Exception;
 use FeWeDev\Base\Variables;
+use Infrangible\CatalogAttributeLandingPage\Model\AbstractLanding as LandingModel;
 use Infrangible\Core\Helper\Attribute;
 use Magento\Catalog\Model\Product;
-use Magento\Framework\DB\Select;
 use Magento\Framework\Model\AbstractModel;
-use Magento\Framework\Model\ResourceModel\Db\AbstractDb;
 use Magento\Framework\Model\ResourceModel\Db\Context;
 
 /**
- * @author      Andreas Knollmann
- * @copyright   2014-2024 Softwareentwicklung Andreas Knollmann
- * @license     http://www.opensource.org/licenses/mit-license.php MIT
+ * Loads and saves landing pages: the values of attributes with options are lists of option IDs.
  */
-class Page
-    extends AbstractDb
+class Page extends AbstractLanding
 {
-    /** @var Variables */
-    protected $variables;
-
-    /** @var Attribute */
-    protected $attributeHelper;
-
     /**
      * @param Variables $variables
      * @param Attribute $attributeHelper
@@ -35,232 +31,128 @@ class Page
      */
     public function __construct(
         Variables $variables,
-        Attribute $attributeHelper,
+        protected Attribute $attributeHelper,
         Context $context,
-        string $connectionName = null)
-    {
-        parent::__construct($context, $connectionName);
-
-        $this->variables = $variables;
-        $this->attributeHelper = $attributeHelper;
+        ?string $connectionName = null
+    ) {
+        parent::__construct($variables, $context, $connectionName);
     }
 
     /**
-     * Resource initialization
+     * Initializes the table and its ID field.
+     *
+     * @return void
      */
-    protected function _construct()
+    protected function _construct(): void
     {
         $this->_init('catalog_attribute_landing_page', 'page_id');
     }
 
     /**
-     * Retrieve select object for load object data
+     * Returns the name of the table with the store views.
      *
-     * @param string $field
-     * @param mixed $value
-     * @param AbstractModel $object
-     *
-     * @return Select
+     * @return string
      */
-    protected function _getLoadSelect($field, $value, $object): Select
+    protected function getStoreTableName(): string
     {
-        $select = parent::_getLoadSelect($field, $value, $object);
-
-        $select->join(['page_store' => $this->getTable('catalog_attribute_landing_page_store')],
-            sprintf('%s.page_id = page_store.page_id', $this->getTable('catalog_attribute_landing_page')),
-            ['store_ids' => 'GROUP_CONCAT(page_store.store_id)']);
-        $select->group(sprintf('%s.page_id', $this->getTable('catalog_attribute_landing_page')));
-
-        return $select;
+        return 'catalog_attribute_landing_page_store';
     }
 
     /**
-     * Perform actions after object load
+     * Converts the values of attributes with options and the sort attributes into lists.
      *
      * @param AbstractModel $object
      *
-     * @return AbstractDb
+     * @return $this
      * @throws Exception
      */
-    protected function _afterLoad(AbstractModel $object): AbstractDb
+    protected function _afterLoad(AbstractModel $object): static
     {
-        /** @var \Infrangible\CatalogAttributeLandingPage\Model\Page $object */
         parent::_afterLoad($object);
 
-        $object->setData('store_ids', explode(',', $object->getData('store_ids')));
+        for ($position = 1; $position <= LandingModel::ATTRIBUTE_COUNT; $position++) {
+            $attributeId = $object->getData(sprintf('attribute_id%d', $position));
 
-        if (!$this->variables->isEmpty($object->getAttributeId1())) {
-            $attribute1 = $this->attributeHelper->getAttribute(
-                Product::ENTITY, $this->variables->stringValue($object->getAttributeId1()));
+            if ($this->variables->isEmpty($attributeId)) {
+                continue;
+            }
 
-            if ($attribute1->usesSource()) {
-                $object->setValue1($object->getValue1() === null ? [] : explode(',', $object->getValue1()));
+            $attribute = $this->attributeHelper->getAttribute(
+                Product::ENTITY,
+                $this->variables->stringValue($attributeId)
+            );
+
+            if ($attribute->usesSource()) {
+                $valueKey = sprintf('value%d', $position);
+                $value = $object->getData($valueKey);
+
+                $object->setData($valueKey, is_string($value) && $value !== '' ? explode(',', $value) : []);
             }
         }
 
-        if (!$this->variables->isEmpty($object->getAttributeId2())) {
-            $attribute2 = $this->attributeHelper->getAttribute(
-                Product::ENTITY, $this->variables->stringValue($object->getAttributeId2()));
+        $attributeOrders = $object->getData('attribute_orders');
 
-            if ($attribute2->usesSource()) {
-                $object->setValue2($object->getValue2() === null ? [] : explode(',', $object->getValue2()));
-            }
-        }
-
-        if (!$this->variables->isEmpty($object->getAttributeId3())) {
-            $attribute3 = $this->attributeHelper->getAttribute(
-                Product::ENTITY, $this->variables->stringValue($object->getAttributeId3()));
-
-            if ($attribute3->usesSource()) {
-                $object->setValue3($object->getValue3() === null ? [] : explode(',', $object->getValue3()));
-            }
-        }
-
-        if (!$this->variables->isEmpty($object->getAttributeId4())) {
-            $attribute4 = $this->attributeHelper->getAttribute(
-                Product::ENTITY, $this->variables->stringValue($object->getAttributeId4()));
-
-            if ($attribute4->usesSource()) {
-                $object->setValue4($object->getValue4() === null ? [] : explode(',', $object->getValue4()));
-            }
-        }
-
-        if (!$this->variables->isEmpty($object->getAttributeId5())) {
-            $attribute5 = $this->attributeHelper->getAttribute(
-                Product::ENTITY, $this->variables->stringValue($object->getAttributeId5()));
-
-            if ($attribute5->usesSource()) {
-                $object->setValue5($object->getValue5() === null ? [] : explode(',', $object->getValue5()));
-            }
-        }
-
-        if (!$this->variables->isEmpty($object->getAttributeOrders())) {
-            $object->setAttributeOrders(
-                $object->getAttributeOrders() === null ? [] : explode(',', $object->getAttributeOrders()));
-        }
+        $object->setData(
+            'attribute_orders',
+            is_string($attributeOrders) && $attributeOrders !== '' ? explode(',', $attributeOrders) : []
+        );
 
         return $this;
     }
 
     /**
-     * Perform actions before object save
+     * Converts the lists of values and sort attributes into texts, and empty values to null.
      *
      * @param AbstractModel $object
      *
-     * @return AbstractDb
+     * @return $this
      */
-    protected function _beforeSave(AbstractModel $object): AbstractDb
+    protected function _beforeSave(AbstractModel $object): static
     {
-        /** @var \Infrangible\CatalogAttributeLandingPage\Model\Page $object */
         parent::_beforeSave($object);
 
-        if ($object->isObjectNew()) {
-            $object->setCreatedAt(gmdate('Y-m-d H:i:s'));
+        for ($position = 1; $position <= LandingModel::ATTRIBUTE_COUNT; $position++) {
+            $this->implodeList($object, sprintf('value%d', $position));
+
+            if ($position > 1) {
+                $this->setNullIfEmpty($object, sprintf('value%d', $position));
+            }
         }
 
-        $object->setUpdatedAt(gmdate('Y-m-d H:i:s'));
+        $this->implodeList($object, 'attribute_orders');
 
-        if (is_array($object->getValue1())) {
-            $object->setValue1(implode(',', $object->getValue1()));
-        }
+        foreach (['attribute_orders', 'attribute_order', 'attribute_order_direction', 'attribute_set_id',
+                     'additional_cms_block_id', 'seo_cms_block_id', 'image', 'logo', 'thumbnail'] as $key) {
 
-        if ($this->variables->isEmpty($object->getAttributeId2())) {
-            $object->setAttributeId2(null);
-        }
-
-        if ($this->variables->isEmpty($object->getValue2())) {
-            $object->setValue2(null);
-        }
-
-        if (is_array($object->getValue2())) {
-            $object->setValue2(implode(',', $object->getValue2()));
-        }
-
-        if ($this->variables->isEmpty($object->getAttributeId3())) {
-            $object->setAttributeId3(null);
-        }
-
-        if ($this->variables->isEmpty($object->getValue3())) {
-            $object->setValue3(null);
-        }
-
-        if (is_array($object->getValue3())) {
-            $object->setValue3(implode(',', $object->getValue3()));
-        }
-
-        if ($this->variables->isEmpty($object->getAttributeId4())) {
-            $object->setAttributeId4(null);
-        }
-
-        if ($this->variables->isEmpty($object->getValue4())) {
-            $object->setValue4(null);
-        }
-
-        if (is_array($object->getValue4())) {
-            $object->setValue4(implode(',', $object->getValue4()));
-        }
-
-        if ($this->variables->isEmpty($object->getAttributeId5())) {
-            $object->setAttributeId5(null);
-        }
-
-        if ($this->variables->isEmpty($object->getValue5())) {
-            $object->setValue5(null);
-        }
-
-        if (is_array($object->getValue5())) {
-            $object->setValue5(implode(',', $object->getValue5()));
-        }
-
-        if ($this->variables->isEmpty($object->getAttributeOrders())) {
-            $object->setAttributeOrders(null);
-        }
-
-        if (is_array($object->getAttributeOrders())) {
-            $object->setAttributeOrders(implode(',', $object->getAttributeOrders()));
+            $this->setNullIfEmpty($object, $key);
         }
 
         return $this;
     }
 
     /**
-     * Perform actions after object save
+     * Converts a list in the field into a comma-separated text.
      *
      * @param AbstractModel $object
+     * @param string $key
      *
-     * @return AbstractDb
+     * @return void
      */
-    protected function _afterSave(AbstractModel $object): AbstractDb
+    private function implodeList(AbstractModel $object, string $key): void
     {
-        parent::_afterSave($object);
+        $value = $object->getData($key);
 
-        /** @var \Infrangible\CatalogAttributeLandingPage\Model\Page $object */
-        $storeIds = $object->getData('store_ids');
-        if (!is_array($storeIds)) {
-            $storeIds = [];
+        if (is_array($value)) {
+            $object->setData(
+                $key,
+                implode(
+                    ',',
+                    array_filter(
+                        array_map([$this->variables, 'stringValue'], $value),
+                        static fn(string $item): bool => $item !== ''
+                    )
+                )
+            );
         }
-
-        $orgStoreIds = $object->getOrigData('store_ids');
-        if (!is_array($orgStoreIds)) {
-            $orgStoreIds = [];
-        }
-
-        $removedStoreIds = array_diff($orgStoreIds, $storeIds);
-
-        foreach ($removedStoreIds as $removedStoreId) {
-            $this->getConnection()->delete(
-                $this->getTable('catalog_attribute_landing_page_store'),
-                sprintf('page_id = %d AND store_id = %d', $object->getPageId(), $removedStoreId));
-        }
-
-        $addedStoreIds = array_diff($storeIds, $orgStoreIds);
-
-        foreach ($addedStoreIds as $addedStoreId) {
-            $this->getConnection()->insert(
-                $this->getTable('catalog_attribute_landing_page_store'),
-                ['page_id' => $object->getPageId(), 'store_id' => $addedStoreId]);
-        }
-
-        return $this;
     }
 }
