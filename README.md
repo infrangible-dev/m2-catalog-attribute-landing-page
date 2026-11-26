@@ -47,7 +47,7 @@ Stores > Configuration > Infrangible Solutions > Attribute Landing Page:
 ## Requirements
 
 - Magento Open Source or Adobe Commerce 2.4.6 or newer, with OpenSearch or Elasticsearch
-- PHP 8.2 or newer
+- PHP 8.1 or newer
 
 The pages and groups in the XML sitemap: [Infrangible Catalog Attribute Landing Page
 Sitemap](https://www.infrangible.dev/modules/catalog-attribute-landing-page-sitemap).
