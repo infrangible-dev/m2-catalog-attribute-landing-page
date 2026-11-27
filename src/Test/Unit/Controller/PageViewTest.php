@@ -71,7 +71,7 @@ class PageViewTest extends TestCase
             ['page_id' => '4', 'active' => '1', 'attribute_id1' => '93', 'value1' => ['49'], 'store_ids' => [0]]
         );
 
-        $this->assertNotFound($this->createView($page, $this->createAttribute('color', false)));
+        $this->assertNotFound($this->createView($page, $this->createAttribute(false)));
     }
 
     /**
@@ -123,7 +123,7 @@ class PageViewTest extends TestCase
             }
         );
 
-        $result = $this->createView($page, $this->createAttribute('color', true), $helper, $layerResolver, $resultPage)
+        $result = $this->createView($page, $this->createAttribute(true), $helper, $layerResolver, $resultPage)
             ->execute();
 
         $this->assertSame($resultPage, $result);
@@ -152,17 +152,16 @@ class PageViewTest extends TestCase
     }
 
     /**
-     * Returns an attribute with the code.
+     * Returns the attribute "color".
      *
-     * @param string $attributeCode
      * @param bool $filterable
      *
      * @return EavAttribute
      */
-    private function createAttribute(string $attributeCode, bool $filterable): EavAttribute
+    private function createAttribute(bool $filterable): EavAttribute
     {
         $attribute = $this->createStub(EavAttribute::class);
-        $attribute->method('getAttributeCode')->willReturn($attributeCode);
+        $attribute->method('getAttributeCode')->willReturn('color');
         $attribute->method('getData')->willReturnMap([['is_filterable', null, $filterable ? '1' : '0']]);
 
         return $attribute;
@@ -199,7 +198,7 @@ class PageViewTest extends TestCase
         $resultForwardFactory->method('create')->willReturn($forward);
 
         $eavAttributeHelper = $this->createStub(Attribute::class);
-        $eavAttributeHelper->method('getAttribute')->willReturn($attribute ?? $this->createAttribute('color', true));
+        $eavAttributeHelper->method('getAttribute')->willReturn($attribute ?? $this->createAttribute(true));
 
         $store = $this->createStub(Store::class);
         $store->method('getId')->willReturn('1');

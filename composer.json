@@ -2,7 +2,7 @@
     "name": "infrangible/m2-catalog-attribute-landing-page",
     "description": "Create landing pages for attribute values, such as a brand or material, with their own address, texts, images, SEO data and a filterable product list, plus overview pages that group them.",
     "type": "magento2-module",
-    "version": "3.0.1",
+    "version": "3.0.2",
     "license": "MIT",
     "keywords": [
         "Magento",

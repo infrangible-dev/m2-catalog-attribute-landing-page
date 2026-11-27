@@ -1,5 +1,12 @@
 # Changelog
 
+## 3.0.2
+
+### Changed
+
+- Unit tests: a test helper no longer takes a parameter that every call passes the same value, as PhpStorm reports
+  it ("Parameter's value is always"); the behavior of the module is unchanged.
+
 ## 3.0.1
 
 ### Changed
